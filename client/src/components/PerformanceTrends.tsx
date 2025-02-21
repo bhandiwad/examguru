@@ -53,14 +53,26 @@ export function PerformanceTrends({ attempts }: { attempts: AttemptWithExam[] })
       if (!attempt.feedback) return;
 
       const feedback = attempt.feedback as EvaluationFeedback;
+
+      // Add null checks for perQuestion array
+      if (!feedback.perQuestion?.length) return;
+
       feedback.perQuestion.forEach(question => {
+        // Add null checks for keyConceptsCovered array
+        if (!question.keyConceptsCovered?.length) return;
+
         question.keyConceptsCovered.forEach(concept => {
           if (!conceptScores[concept]) {
             conceptScores[concept] = { total: 0, count: 0 };
           }
-          conceptScores[concept].total += question.conceptualUnderstanding.level === "Excellent" ? 100 :
-            question.conceptualUnderstanding.level === "Good" ? 75 :
-            question.conceptualUnderstanding.level === "Fair" ? 50 : 25;
+
+          // Safely access the level with null check
+          const level = question.conceptualUnderstanding?.level;
+          const score = level === "Excellent" ? 100 :
+                       level === "Good" ? 75 :
+                       level === "Fair" ? 50 : 25;
+
+          conceptScores[concept].total += score;
           conceptScores[concept].count++;
         });
       });
@@ -75,7 +87,8 @@ export function PerformanceTrends({ attempts }: { attempts: AttemptWithExam[] })
       .slice(0, 6); // Show top 6 concepts
   }, [attempts]);
 
-  if (attempts.length === 0) return null;
+  // Don't render if no attempts
+  if (!attempts?.length) return null;
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -147,43 +160,45 @@ export function PerformanceTrends({ attempts }: { attempts: AttemptWithExam[] })
         </CardContent>
       </Card>
 
-      {/* Concept Mastery */}
-      <Card className="col-span-full md:col-span-2">
-        <CardHeader>
-          <CardTitle>Concept Mastery</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <RadarChart data={conceptMasteryData}>
-                <PolarGrid />
-                <PolarAngleAxis dataKey="concept" />
-                <PolarRadiusAxis domain={[0, 100]} />
-                <Radar
-                  name="Mastery Level"
-                  dataKey="mastery"
-                  fill="hsl(var(--primary))"
-                  fillOpacity={0.2}
-                  stroke="hsl(var(--primary))"
-                />
-                <Tooltip content={({ active, payload }) => {
-                  if (!active || !payload?.length) return null;
-                  return (
-                    <div className="rounded-lg border bg-background p-2 shadow-sm">
-                      <div className="grid grid-cols-2 gap-2">
-                        <div className="font-medium">Concept:</div>
-                        <div>{payload[0].payload.concept}</div>
-                        <div className="font-medium">Mastery:</div>
-                        <div>{payload[0].value}%</div>
+      {/* Only show concept mastery if we have concept data */}
+      {conceptMasteryData.length > 0 && (
+        <Card className="col-span-full md:col-span-2">
+          <CardHeader>
+            <CardTitle>Concept Mastery</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <RadarChart data={conceptMasteryData}>
+                  <PolarGrid />
+                  <PolarAngleAxis dataKey="concept" />
+                  <PolarRadiusAxis domain={[0, 100]} />
+                  <Radar
+                    name="Mastery Level"
+                    dataKey="mastery"
+                    fill="hsl(var(--primary))"
+                    fillOpacity={0.2}
+                    stroke="hsl(var(--primary))"
+                  />
+                  <Tooltip content={({ active, payload }) => {
+                    if (!active || !payload?.length) return null;
+                    return (
+                      <div className="rounded-lg border bg-background p-2 shadow-sm">
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="font-medium">Concept:</div>
+                          <div>{payload[0].payload.concept}</div>
+                          <div className="font-medium">Mastery:</div>
+                          <div>{payload[0].value}%</div>
+                        </div>
                       </div>
-                    </div>
-                  );
-                }} />
-              </RadarChart>
-            </ResponsiveContainer>
-          </div>
-        </CardContent>
-      </Card>
+                    );
+                  }} />
+                </RadarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
