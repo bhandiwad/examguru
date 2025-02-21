@@ -6,6 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { PlusCircle, FilePlus } from "lucide-react";
 import type { Attempt, Exam, EvaluationFeedback } from "@shared/schema";
 import { PerformanceTrends } from "@/components/PerformanceTrends";
+import { PageHeader } from "@/components/ui/page-header";
 import {
   Accordion,
   AccordionContent,
@@ -36,7 +37,7 @@ export default function Dashboard() {
   return (
     <div className="container mx-auto py-8">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Your Exams</h1>
+        <PageHeader title="Your Exams" />
         <div className="flex gap-4">
           <Link href="/add-template">
             <Button variant="outline">
