@@ -1,3 +1,4 @@
+import React from "react";
 import { motion } from "framer-motion";
 
 export function LoadingSpinner() {
@@ -23,13 +24,13 @@ export function LoadingDots() {
         <motion.div
           key={index}
           className="w-3 h-3 bg-primary rounded-full"
-          initial={{ scale: 0 }}
-          animate={{ scale: [0, 1, 0] }}
+          animate={{
+            scale: [0, 1, 0]
+          }}
           transition={{
             duration: 1,
             repeat: Infinity,
-            delay: index * 0.2,
-            ease: "easeInOut"
+            delay: index * 0.2
           }}
         />
       ))}
@@ -37,43 +38,36 @@ export function LoadingDots() {
   );
 }
 
-interface ProgressBarProps {
-  progress: number;
-  showPercentage?: boolean;
-}
-
-export function AnimatedProgressBar({ progress, showPercentage = true }: ProgressBarProps) {
+export function AnimatedProgressBar({ progress, showPercentage = true }: { progress: number; showPercentage?: boolean }) {
   return (
     <div className="w-full">
       <div className="h-4 bg-secondary/20 rounded-full overflow-hidden">
         <motion.div
           className="h-full bg-primary"
+          style={{ width: `${progress}%` }}
           initial={{ width: 0 }}
           animate={{ width: `${progress}%` }}
-          transition={{ duration: 0.5, ease: "easeOut" }}
+          transition={{ duration: 0.5 }}
         />
       </div>
       {showPercentage && (
-        <motion.p 
-          className="text-sm text-center mt-2 text-muted-foreground"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3 }}
-        >
+        <div className="text-sm text-center mt-2 text-muted-foreground">
           {Math.round(progress)}% Complete
-        </motion.p>
+        </div>
       )}
     </div>
   );
 }
 
-interface ExamProgressProps {
-  currentQuestion: number;
-  totalQuestions: number;
-  timeProgress: number;
-}
-
-export function ExamProgress({ currentQuestion, totalQuestions, timeProgress }: ExamProgressProps) {
+export function ExamProgress({ 
+  currentQuestion, 
+  totalQuestions, 
+  timeProgress 
+}: { 
+  currentQuestion: number; 
+  totalQuestions: number; 
+  timeProgress: number; 
+}) {
   return (
     <div className="space-y-6">
       <div className="space-y-2">
@@ -86,7 +80,7 @@ export function ExamProgress({ currentQuestion, totalQuestions, timeProgress }: 
           showPercentage={false}
         />
       </div>
-      
+
       <div className="space-y-2">
         <div className="flex justify-between text-sm text-muted-foreground">
           <span>Time Remaining</span>

@@ -3,7 +3,6 @@ import { useLocation, useParams } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
@@ -12,7 +11,6 @@ import { apiRequest } from "@/lib/queryClient";
 import html2canvas from 'html2canvas';
 import { PageHeader } from "@/components/ui/page-header";
 import { LoadingSpinner, LoadingDots, ExamProgress } from "@/components/ui/loading-animation";
-import { motion, AnimatePresence } from "framer-motion";
 
 type Question = {
   type: string;
@@ -178,14 +176,9 @@ export default function TakeExam() {
         <PageHeader title="Loading Exam..." />
         <div className="mt-8">
           <LoadingSpinner />
-          <motion.p
-            className="text-center mt-4 text-muted-foreground"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-          >
+          <p className="text-center mt-4 text-muted-foreground">
             Preparing your exam...
-          </motion.p>
+          </p>
         </div>
       </div>
     );
@@ -197,13 +190,9 @@ export default function TakeExam() {
         <PageHeader title="Exam Not Found" />
         <Card className="mt-8">
           <CardContent className="py-8 text-center">
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.5 }}
-            >
+            <div className="text-muted-foreground">
               The requested exam could not be found.
-            </motion.div>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -216,11 +205,7 @@ export default function TakeExam() {
 
   return (
     <div className="container mx-auto py-8 max-w-4xl">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
+      <div className="space-y-4">
         <PageHeader title={`${exam.subject} Exam`} />
 
         <Card className="mb-4">
@@ -256,75 +241,65 @@ export default function TakeExam() {
           </CardContent>
         </Card>
 
-        <AnimatePresence mode="wait">
-          <motion.div
-            key="exam-content"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            <Card>
-              <CardContent className="prose max-w-none pt-6">
-                <h2>Questions</h2>
-                {questions.map((question, index) => (
-                  <div key={index} className="mb-8 p-4 border rounded-lg">
-                    <div className="flex justify-between items-start">
-                      <h3 className="text-lg font-semibold mb-2">Question {index + 1}</h3>
-                      <span className="text-sm text-gray-500">Marks: {question.marks}</span>
-                    </div>
+        <Card>
+          <CardContent className="prose max-w-none pt-6">
+            <h2>Questions</h2>
+            {questions.map((question, index) => (
+              <div key={index} className="mb-8 p-4 border rounded-lg">
+                <div className="flex justify-between items-start">
+                  <h3 className="text-lg font-semibold mb-2">Question {index + 1}</h3>
+                  <span className="text-sm text-gray-500">Marks: {question.marks}</span>
+                </div>
 
-                    <p className="mb-4">{question.text}</p>
+                <p className="mb-4">{question.text}</p>
 
-                    {question.image && (
-                      <div className="mb-4">
-                        <img
-                          src={question.image}
-                          alt={`Diagram for question ${index + 1}`}
-                          className="max-w-full h-auto rounded-lg shadow-md"
-                        />
-                      </div>
-                    )}
-
-                    {question.type === "MCQ" && question.choices && (
-                      <RadioGroup
-                        className="space-y-2"
-                        value={selectedAnswers[index]}
-                        onValueChange={(value) => {
-                          setSelectedAnswers(prev => ({
-                            ...prev,
-                            [index]: value
-                          }));
-                        }}
-                      >
-                        {Object.entries(question.choices).map(([key, value]) => (
-                          <div key={key} className="flex items-center space-x-2">
-                            <RadioGroupItem value={key} id={`q${index}-${key}`} />
-                            <Label htmlFor={`q${index}-${key}`}>
-                              {key}. {value}
-                            </Label>
-                          </div>
-                        ))}
-                      </RadioGroup>
-                    )}
-
-                    {question.type !== "MCQ" && (
-                      <div className="mt-4">
-                        <Label htmlFor={`q${index}-answer`}>Your Answer:</Label>
-                        <textarea
-                          id={`q${index}-answer`}
-                          className="answer-input w-full min-h-[200px] p-4 mt-2 border rounded-lg"
-                          placeholder="Write your answer here..."
-                        />
-                      </div>
-                    )}
+                {question.image && (
+                  <div className="mb-4">
+                    <img
+                      src={question.image}
+                      alt={`Diagram for question ${index + 1}`}
+                      className="max-w-full h-auto rounded-lg shadow-md"
+                    />
                   </div>
-                ))}
-              </CardContent>
-            </Card>
-          </motion.div>
-        </AnimatePresence>
-      </motion.div>
+                )}
+
+                {question.type === "MCQ" && question.choices && (
+                  <RadioGroup
+                    className="space-y-2"
+                    value={selectedAnswers[index]}
+                    onValueChange={(value) => {
+                      setSelectedAnswers(prev => ({
+                        ...prev,
+                        [index]: value
+                      }));
+                    }}
+                  >
+                    {Object.entries(question.choices).map(([key, value]) => (
+                      <div key={key} className="flex items-center space-x-2">
+                        <RadioGroupItem value={key} id={`q${index}-${key}`} />
+                        <Label htmlFor={`q${index}-${key}`}>
+                          {key}. {value}
+                        </Label>
+                      </div>
+                    ))}
+                  </RadioGroup>
+                )}
+
+                {question.type !== "MCQ" && (
+                  <div className="mt-4">
+                    <Label htmlFor={`q${index}-answer`}>Your Answer:</Label>
+                    <textarea
+                      id={`q${index}-answer`}
+                      className="answer-input w-full min-h-[200px] p-4 mt-2 border rounded-lg"
+                      placeholder="Write your answer here..."
+                    />
+                  </div>
+                )}
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
