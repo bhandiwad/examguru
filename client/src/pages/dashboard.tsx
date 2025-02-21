@@ -24,6 +24,16 @@ import {
 
 type AttemptWithExam = Attempt & { exam: Exam };
 
+function formatDateTime(date: string | Date) {
+  return new Date(date).toLocaleString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
+
 export default function Dashboard() {
   const { data: attempts, isLoading: attemptsLoading } = useQuery<AttemptWithExam[]>({
     queryKey: ["/api/attempts"]
@@ -88,7 +98,7 @@ export default function Dashboard() {
                     </div>
                     <div className="flex items-center gap-2 text-sm">
                       <ClockIcon className="h-4 w-4" />
-                      <span>Created: {new Date(exam.createdAt).toLocaleDateString()}</span>
+                      <span>Created: {formatDateTime(exam.createdAt)}</span>
                     </div>
                     <Link href={`/take/${exam.id}`}>
                       <Button className="w-full mt-4">
@@ -124,8 +134,15 @@ export default function Dashboard() {
                   <div className="space-y-4">
                     <div className="flex items-center gap-2 text-sm text-gray-500">
                       <ClockIcon className="h-4 w-4" />
-                      <span>Attempted: {new Date(attempt.startTime).toLocaleDateString()}</span>
+                      <span>Started: {formatDateTime(attempt.startTime)}</span>
                     </div>
+
+                    {attempt.endTime && (
+                      <div className="flex items-center gap-2 text-sm text-gray-500">
+                        <ClockIcon className="h-4 w-4" />
+                        <span>Completed: {formatDateTime(attempt.endTime)}</span>
+                      </div>
+                    )}
 
                     <div className="flex items-center gap-2 text-sm text-gray-500">
                       <BookOpenIcon className="h-4 w-4" />
@@ -163,7 +180,7 @@ export default function Dashboard() {
                                       </p>
                                     </div>
 
-                                    {(attempt.feedback as EvaluationFeedback).overall.strengths && (
+                                    {(attempt.feedback as EvaluationFeedback).overall.strengths?.length > 0 && (
                                       <div>
                                         <h4 className="font-medium mb-2">Strengths</h4>
                                         <ul className="list-disc pl-4 space-y-1">
@@ -174,7 +191,7 @@ export default function Dashboard() {
                                       </div>
                                     )}
 
-                                    {(attempt.feedback as EvaluationFeedback).overall.areas_for_improvement && (
+                                    {(attempt.feedback as EvaluationFeedback).overall.areas_for_improvement?.length > 0 && (
                                       <div>
                                         <h4 className="font-medium mb-2">Areas for Improvement</h4>
                                         <ul className="list-disc pl-4 space-y-1">
@@ -185,7 +202,7 @@ export default function Dashboard() {
                                       </div>
                                     )}
 
-                                    {(attempt.feedback as EvaluationFeedback).overall.learning_recommendations && (
+                                    {(attempt.feedback as EvaluationFeedback).overall.learning_recommendations?.length > 0 && (
                                       <div>
                                         <h4 className="font-medium mb-2">Learning Recommendations</h4>
                                         <ul className="list-disc pl-4 space-y-1">

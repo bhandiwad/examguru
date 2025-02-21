@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer } from "http";
 import multer from "multer";
 import { storage } from "./storage";
-import { generateQuestions, evaluateAnswers, analyzeQuestionPaperTemplate } from "./openai"; // Added analyzeQuestionPaperTemplate
+import { generateQuestions, evaluateAnswers, analyzeQuestionPaperTemplate } from "./openai";
 import { insertExamSchema, insertAttemptSchema, insertQuestionTemplateSchema } from "@shared/schema";
 
 // Configure multer for handling file uploads
@@ -263,8 +263,8 @@ export async function registerRoutes(app: Express) {
 
   app.post("/api/attempts/upload", upload.single("answer"), async (req, res) => {
     try {
-      if (!req.file) {
-        return res.status(400).json({ message: "No file uploaded" });
+      if (!req.file && !req.body.answers) {
+        return res.status(400).json({ message: "No answers provided" });
       }
 
       const examId = parseInt(req.body.examId);
@@ -280,15 +280,68 @@ export async function registerRoutes(app: Express) {
         return res.status(404).json({ message: "Exam not found" });
       }
 
-      // Evaluate answers using the image directly
-      const evaluation = await evaluateAnswers(req.file.buffer.toString('base64'), exam.questions);
+      let evaluation;
+      const questions = exam.questions as any[];
+      const hasTheoryQuestions = questions.some(q => q.type !== 'MCQ');
+
+      if (hasTheoryQuestions) {
+        // For exams with theory questions, evaluate using image
+        if (!req.file) {
+          return res.status(400).json({ message: "Answer image required for theory questions" });
+        }
+        evaluation = await evaluateAnswers(req.file.buffer.toString('base64'), questions);
+      } else {
+        // For MCQ-only exams, evaluate the answers directly
+        const selectedAnswers = JSON.parse(req.body.answers);
+        const score = questions.reduce((total, q, index) => {
+          if (q.type === 'MCQ' && selectedAnswers[index] === q.correctAnswer) {
+            return total + q.marks;
+          }
+          return total;
+        }, 0);
+
+        const totalMarks = questions.reduce((sum, q) => sum + q.marks, 0);
+        const percentage = Math.round((score / totalMarks) * 100);
+
+        evaluation = {
+          score: percentage,
+          feedback: {
+            overall: {
+              summary: `You scored ${percentage}% in this MCQ exam.`,
+              strengths: percentage >= 70 ? ["Good performance in multiple choice questions"] : [],
+              areas_for_improvement: percentage < 70 ? ["Review the topics where you made mistakes"] : [],
+              learning_recommendations: []
+            },
+            perQuestion: questions.map((q, index) => ({
+              questionNumber: index + 1,
+              score: selectedAnswers[index] === q.correctAnswer ? q.marks : 0,
+              conceptualUnderstanding: {
+                level: selectedAnswers[index] === q.correctAnswer ? "Good" : "Needs Improvement",
+                details: selectedAnswers[index] === q.correctAnswer ?
+                  "Correctly answered" : "Incorrect answer selected"
+              },
+              technicalAccuracy: {
+                score: selectedAnswers[index] === q.correctAnswer ? 100 : 0,
+                details: selectedAnswers[index] === q.correctAnswer ?
+                  "Accurate selection" : "Wrong option selected"
+              },
+              keyConceptsCovered: [q.text],
+              misconceptions: selectedAnswers[index] !== q.correctAnswer ?
+                ["Review this concept"] : [],
+              improvementAreas: selectedAnswers[index] !== q.correctAnswer ?
+                ["Practice similar questions"] : [],
+              exemplarAnswer: `The correct answer is ${q.correctAnswer}`
+            }))
+          }
+        };
+      }
 
       const attempt = await storage.createAttempt({
         examId,
         userId,
         startTime,
         endTime: new Date(),
-        answerImageUrl: "data:image/jpeg;base64," + req.file.buffer.toString('base64'),
+        answerImageUrl: req.file ? "data:image/jpeg;base64," + req.file.buffer.toString('base64') : undefined,
         score: evaluation.score,
         feedback: evaluation.feedback
       });

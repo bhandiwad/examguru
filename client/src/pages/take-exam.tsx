@@ -34,6 +34,7 @@ export default function TakeExam() {
   const [timeLeft, setTimeLeft] = useState(7200); // 2 hours in seconds
   const [isRunning, setIsRunning] = useState(false);
   const [startTime] = useState(new Date());
+  const [selectedAnswers, setSelectedAnswers] = useState<Record<number, string>>({});
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -95,53 +96,65 @@ export default function TakeExam() {
     setIsRunning(true);
   };
 
+  const hasTheoryQuestions = (questions: Question[]) => {
+    return questions.some(q => q.type !== 'MCQ');
+  };
+
   const finishExam = async () => {
     setIsRunning(false);
 
     if (!exam) return;
 
-    const examContent = document.querySelector(".prose");
-    if (!examContent) {
-      toast({
-        title: "Error",
-        description: "Could not capture exam content",
-        variant: "destructive"
-      });
-      return;
-    }
+    const questions = exam.questions as Question[];
+    const formData = new FormData();
+    formData.append("examId", exam.id.toString());
+    formData.append("userId", "1"); // TODO: Replace with actual user ID
+    formData.append("startTime", startTime.toISOString());
 
-    try {
-      const canvas = await html2canvas(examContent as HTMLElement, {
-        scale: 2,
-        useCORS: true,
-        logging: true,
-        backgroundColor: "#ffffff"
-      });
+    // If exam has theory questions, capture the page content
+    if (hasTheoryQuestions(questions)) {
+      const examContent = document.querySelector(".prose");
+      if (!examContent) {
+        toast({
+          title: "Error",
+          description: "Could not capture exam content",
+          variant: "destructive"
+        });
+        return;
+      }
 
-      canvas.toBlob(async (blob) => {
-        if (!blob) {
-          toast({
-            title: "Error",
-            description: "Failed to capture answers",
-            variant: "destructive"
-          });
-          return;
-        }
+      try {
+        const canvas = await html2canvas(examContent as HTMLElement, {
+          scale: 2,
+          useCORS: true,
+          logging: true,
+          backgroundColor: "#ffffff"
+        });
 
-        const formData = new FormData();
-        formData.append("examId", exam.id.toString());
-        formData.append("userId", "1"); // TODO: Replace with actual user ID
-        formData.append("startTime", startTime.toISOString());
-        formData.append("answer", blob, "answer.png");
+        canvas.toBlob(async (blob) => {
+          if (!blob) {
+            toast({
+              title: "Error",
+              description: "Failed to capture answers",
+              variant: "destructive"
+            });
+            return;
+          }
 
-        submitMutation.mutate(formData);
-      }, 'image/png', 1.0);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to capture exam content",
-        variant: "destructive"
-      });
+          formData.append("answer", blob, "answer.png");
+          submitMutation.mutate(formData);
+        }, 'image/png', 1.0);
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to capture exam content",
+          variant: "destructive"
+        });
+      }
+    } else {
+      // For MCQ-only exams, submit the selected answers directly
+      formData.append("answers", JSON.stringify(selectedAnswers));
+      submitMutation.mutate(formData);
     }
   };
 
@@ -179,7 +192,8 @@ export default function TakeExam() {
                 variant="destructive"
                 disabled={submitMutation.isPending}
               >
-                {submitMutation.isPending ? "Submitting..." : "Finish Exam"}
+                {submitMutation.isPending ? "Submitting..." : 
+                  hasTheoryQuestions(questions) ? "Finish Exam & Upload Answers" : "Submit Answers"}
               </Button>
             )}
           </CardTitle>
@@ -212,7 +226,16 @@ export default function TakeExam() {
               )}
 
               {question.type === "MCQ" && question.choices && (
-                <RadioGroup className="space-y-2">
+                <RadioGroup
+                  className="space-y-2"
+                  value={selectedAnswers[index]}
+                  onValueChange={(value) => {
+                    setSelectedAnswers(prev => ({
+                      ...prev,
+                      [index]: value
+                    }));
+                  }}
+                >
                   {Object.entries(question.choices).map(([key, value]) => (
                     <div key={key} className="flex items-center space-x-2">
                       <RadioGroupItem value={key} id={`q${index}-${key}`} />
@@ -222,6 +245,15 @@ export default function TakeExam() {
                     </div>
                   ))}
                 </RadioGroup>
+              )}
+
+              {question.type !== "MCQ" && (
+                <div className="mt-4 p-4 bg-muted/50 rounded-lg">
+                  <p className="text-sm text-muted-foreground">
+                    This is a {question.type} question. Write your answer in the space below.
+                    Your answer will be captured when you click "Finish Exam & Upload Answers".
+                  </p>
+                </div>
               )}
             </div>
           ))}
