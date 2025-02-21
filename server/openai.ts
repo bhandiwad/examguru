@@ -24,7 +24,12 @@ export async function generateQuestions(
 
   let promptContent = `Generate an exam paper for ${subject} (${grade} grade) following ${curriculum} curriculum.
   Difficulty level: ${difficulty}
-  Format: ${JSON.stringify(format)}`;
+  Format: ${JSON.stringify(format)}
+
+  Important requirements:
+  1. For MCQ questions, ALWAYS provide 4 choices labeled A, B, C, D
+  2. For questions that would benefit from visual aids (e.g., pendulum motion, light rays, circuits), include a description for image generation
+  3. Follow the section structure exactly as specified in the template`;
 
   if (selectedTemplate) {
     promptContent += `\n\nUse this specific institution's format:
@@ -41,22 +46,39 @@ export async function generateQuestions(
   {
     "questions": [
       {
-        "type": "string",
+        "type": "MCQ",
+        "text": "string",
+        "marks": number,
+        "choices": {
+          "A": "string",
+          "B": "string",
+          "C": "string",
+          "D": "string"
+        },
+        "correctAnswer": "A|B|C|D",
+        "rubric": "string",
+        "section": "string",
+        "imageDescription": "string (optional)"
+      },
+      {
+        "type": "Theory|Numerical",
         "text": "string",
         "marks": number,
         "expectedAnswer": "string",
         "rubric": "string",
-        "section": "string"
+        "section": "string",
+        "imageDescription": "string (optional)"
       }
     ]
   }
 
   Ensure that:
-  1. Questions follow the curriculum standards and institution format (if specified)
-  2. Each question matches the template structure
-  3. Difficulty level is appropriate for the grade
-  4. Total marks match the format specification
-  5. Questions maintain the style and structure of the institution's format (if specified)`;
+  1. Questions follow the curriculum standards and institution format
+  2. Each question matches the template structure exactly
+  3. MCQ questions MUST have 4 choices
+  4. Include image descriptions for physics concepts that need visualization
+  5. Difficulty level is appropriate for the grade
+  6. Total marks match the format specification`;
 
   try {
     const response = await openai.chat.completions.create({
@@ -70,6 +92,27 @@ export async function generateQuestions(
     }
 
     const parsedResponse = JSON.parse(response.choices[0].message.content);
+
+    // Generate images for questions that need them
+    for (const question of parsedResponse.questions) {
+      if (question.imageDescription) {
+        try {
+          const imageResponse = await openai.images.generate({
+            model: "dall-e-3",
+            prompt: `Create a clear, textbook-style diagram for a physics question: ${question.imageDescription}. The image should be simple, clear, and educational.`,
+            n: 1,
+            size: "1024x1024",
+            quality: "standard",
+          });
+
+          question.image = imageResponse.data[0].url;
+        } catch (error) {
+          console.error("Failed to generate image for question:", error);
+          // Continue without the image if generation fails
+        }
+      }
+    }
+
     console.log("Successfully generated questions:", parsedResponse);
     return parsedResponse;
   } catch (error: any) {

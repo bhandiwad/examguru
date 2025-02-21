@@ -4,7 +4,25 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import type { Exam } from "@shared/schema";
+
+type Question = {
+  type: string;
+  text: string;
+  marks: number;
+  choices?: {
+    A: string;
+    B: string;
+    C: string;
+    D: string;
+  };
+  correctAnswer?: string;
+  rubric: string;
+  section: string;
+  image?: string;
+};
 
 export default function TakeExam() {
   const [, setLocation] = useLocation();
@@ -59,6 +77,8 @@ export default function TakeExam() {
     );
   }
 
+  const questions = exam.questions as Question[];
+
   return (
     <div className="container mx-auto py-8 max-w-4xl">
       <Card className="mb-4">
@@ -80,11 +100,37 @@ export default function TakeExam() {
       <Card>
         <CardContent className="prose max-w-none pt-6">
           <h2>Questions</h2>
-          {exam.questions.map((question: any, index: number) => (
-            <div key={index} className="mb-6">
-              <h3>Question {index + 1}</h3>
-              <p>{question.text}</p>
-              <p className="text-sm text-gray-500">Marks: {question.marks}</p>
+          {questions.map((question, index) => (
+            <div key={index} className="mb-8 p-4 border rounded-lg">
+              <div className="flex justify-between items-start">
+                <h3 className="text-lg font-semibold mb-2">Question {index + 1}</h3>
+                <span className="text-sm text-gray-500">Marks: {question.marks}</span>
+              </div>
+
+              <p className="mb-4">{question.text}</p>
+
+              {question.image && (
+                <div className="mb-4">
+                  <img 
+                    src={question.image} 
+                    alt={`Diagram for question ${index + 1}`}
+                    className="max-w-full h-auto rounded-lg shadow-md"
+                  />
+                </div>
+              )}
+
+              {question.type === "MCQ" && question.choices && (
+                <RadioGroup className="space-y-2">
+                  {Object.entries(question.choices).map(([key, value]) => (
+                    <div key={key} className="flex items-center space-x-2">
+                      <RadioGroupItem value={key} id={`q${index}-${key}`} />
+                      <Label htmlFor={`q${index}-${key}`}>
+                        {key}. {value}
+                      </Label>
+                    </div>
+                  ))}
+                </RadioGroup>
+              )}
             </div>
           ))}
         </CardContent>
