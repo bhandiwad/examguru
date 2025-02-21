@@ -23,16 +23,56 @@ export async function generateQuestions(
     chapters
   });
 
+  let difficultyGuidelines = "";
+  if (difficulty === "Hard") {
+    difficultyGuidelines = `
+    Since difficulty level is HARD, ensure questions are genuinely challenging:
+    1. Complex Problem-Solving:
+       - Multi-step problems requiring multiple concepts
+       - Application of concepts in non-standard situations
+       - Problems requiring deep analytical thinking
+
+    2. Advanced Concepts:
+       - Questions that combine multiple chapters/topics
+       - Problems requiring thorough understanding of prerequisites
+       - Higher-order thinking questions (analysis, evaluation, creation)
+
+    3. Specific Requirements by Subject:
+       For Mathematics:
+       - Complex word problems requiring multiple mathematical concepts
+       - Problems involving proof and mathematical reasoning
+       - Questions requiring creative problem-solving approaches
+
+       For Physics:
+       - Complex numerical problems with multiple concepts
+       - Advanced theoretical questions
+       - Real-world applications with multiple variables
+
+       For Chemistry:
+       - Complex reaction mechanisms
+       - Multi-step stoichiometry problems
+       - Advanced theoretical concepts
+
+    4. Question Characteristics:
+       - Include tricky edge cases
+       - Require deep conceptual understanding
+       - Challenge common misconceptions
+       - Test application in unfamiliar contexts`;
+  }
+
   let promptContent = `Generate an exam paper for ${subject} (${grade} grade) following ${curriculum} curriculum.
   Difficulty level: ${difficulty}
   Format: ${JSON.stringify(format)}
   ${chapters ? `Focus on these chapters/topics: ${chapters.join(", ")}` : ""}
+
+  ${difficultyGuidelines}
 
   STRICT REQUIREMENTS:
   1. Each question must be properly formatted and labeled
   2. For MCQ type questions:
      - Each MCQ MUST have exactly 4 choices labeled A, B, C, D
      - Include the correct answer
+     - For Hard difficulty: Make distractors very close to the correct answer
   3. For diagrams:
      - Only include simple, 2D diagrams for physics concepts (e.g., force diagrams, ray diagrams)
      - Keep diagrams black and white, minimal design
@@ -75,7 +115,7 @@ export async function generateQuestions(
       messages: [
         {
           role: "system",
-          content: "You are an expert exam question generator. You must ALWAYS respond with a valid JSON object matching the specified schema exactly. Do not include any explanatory text outside the JSON structure."
+          content: "You are an expert exam question generator specializing in creating challenging and thought-provoking questions. You must ALWAYS respond with a valid JSON object matching the specified schema exactly. Do not include any explanatory text outside the JSON structure."
         },
         {
           role: "user",
