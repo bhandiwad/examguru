@@ -173,8 +173,8 @@ export async function generateQuestions(
 
     // Validate required fields
     for (const question of questions) {
-      if (!question.type || !question.text || !question.marks || !question.section || 
-          !question.chapter || !question.topic || !question.keyConcepts || !question.studyResources) {
+      if (!question.type || !question.text || !question.marks || !question.section ||
+        !question.chapter || !question.topic || !question.keyConcepts || !question.studyResources) {
         throw new Error("Questions must include all required fields");
       }
 
@@ -215,21 +215,30 @@ export async function generateQuestions(
 export async function evaluateAnswers(imageBase64: string, questions: any) {
   try {
     const evaluationPrompt = `
-    Evaluate these exam questions and answers:
-    Questions: ${JSON.stringify(questions)}
-    
-    Consider:
-    1. The accuracy and completeness of responses
-    2. Understanding of core concepts
-    3. Problem-solving approach
-    4. Technical accuracy
-    
-    For incorrect answers, provide:
-    1. Specific study resources
-    2. Common misconceptions
-    3. Practice recommendations
-    
-    Provide a detailed evaluation in this EXACT JSON format:
+    You are evaluating a mathematics exam. Here are the questions and student's answers:
+
+    Questions with correct answers and rubrics: ${JSON.stringify(questions, null, 2)}
+    Student's answer image is provided.
+
+    Evaluation Rules:
+    1. For MCQ questions:
+       - Compare student's selected option with the correct answer
+       - Award full marks for correct answers
+       - Zero marks for incorrect answers
+
+    2. For theory/numerical questions:
+       - Check solution steps visible in the answer image
+       - Follow the provided rubric strictly
+       - Award partial marks based on correct steps
+       - Look for mathematical reasoning and proof
+
+    3. For each question provide:
+       - Detailed scoring breakdown
+       - Specific feedback on mistakes
+       - Conceptual understanding assessment
+       - Improvement suggestions
+
+    Your evaluation must be detailed and provided in this EXACT JSON format:
     {
       "score": number (0-100),
       "feedback": {
@@ -247,7 +256,7 @@ export async function evaluateAnswers(imageBase64: string, questions: any) {
             "chapter": "string",
             "topic": "string",
             "conceptualUnderstanding": {
-              "level": "string",
+              "level": "Excellent|Good|Fair|Needs Improvement",
               "details": "string"
             },
             "misconceptions": ["string"],
@@ -279,19 +288,27 @@ export async function evaluateAnswers(imageBase64: string, questions: any) {
     }`;
 
     const evaluationResponse = await openai.chat.completions.create({
-      model: "gpt-4",
+      model: "gpt-4-vision-preview",
       messages: [
         {
-          role: "system",
-          content: "You are an expert exam evaluator. Provide detailed feedback focusing on exam-specific concepts and methodologies."
-        },
-        {
           role: "user",
-          content: evaluationPrompt
-        }
+          content: [
+            {
+              type: "text",
+              text: evaluationPrompt
+            },
+            {
+              type: "image_url",
+              image_url: {
+                url: `data:image/jpeg;base64,${imageBase64}`
+              }
+            }
+          ],
+        },
       ],
+      max_tokens: 4000,
       temperature: 0.3,
-      max_tokens: 2000
+      response_format: { type: "json_object" }
     });
 
     if (!evaluationResponse.choices[0].message.content) {
@@ -308,49 +325,7 @@ export async function evaluateAnswers(imageBase64: string, questions: any) {
     }
   } catch (error: any) {
     console.error("Error in evaluation:", error);
-
-    // Provide a basic fallback evaluation
-    const totalMarks = questions.reduce((sum: number, q: any) => sum + q.marks, 0);
-    const estimatedScore = Math.floor(Math.random() * 30) + 40;
-
-    return {
-      score: estimatedScore,
-      feedback: {
-        overall: {
-          summary: `Completed exam with an estimated score of ${estimatedScore}%`,
-          strengths: ["Attempted all questions"],
-          areas_for_improvement: ["Consider providing more detailed answers"],
-          learning_recommendations: ["Review course materials", "Practice similar questions"]
-        },
-        questions: questions.map((q: any, index: number) => ({
-          questionNumber: index + 1,
-          isCorrect: false,
-          score: 0,
-          chapter: q.chapter || "Unknown",
-          topic: q.topic || "Unknown",
-          conceptualUnderstanding: {
-            level: "Needs Review",
-            details: "Unable to evaluate answer"
-          },
-          misconceptions: ["Unable to analyze specific misconceptions"],
-          studyResources: [
-            {
-              type: "article",
-              title: "General Study Guide",
-              description: "Review the chapter materials and practice similar problems"
-            }
-          ]
-        })),
-        performanceAnalytics: {
-          byChapter: {},
-          difficultyAnalysis: {
-            easy: estimatedScore + 10,
-            medium: estimatedScore,
-            hard: estimatedScore - 10
-          }
-        }
-      }
-    };
+    throw error; 
   }
 }
 
