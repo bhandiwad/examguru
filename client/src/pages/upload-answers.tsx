@@ -5,7 +5,6 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
 
 export default function UploadAnswers() {
   const [, setLocation] = useLocation();
@@ -15,11 +14,25 @@ export default function UploadAnswers() {
   const upload = useMutation({
     mutationFn: async () => {
       if (!file) return;
-      
+
       const formData = new FormData();
       formData.append("answer", file);
-      
-      return apiRequest("POST", "/api/attempts/upload", formData);
+      formData.append("examId", "1"); // We'll need to pass this from the exam page
+      formData.append("userId", "1"); // This should come from auth
+      formData.append("startTime", new Date().toISOString());
+
+      const response = await fetch("/api/attempts/upload", {
+        method: "POST",
+        body: formData,
+        credentials: "include"
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Upload failed");
+      }
+
+      return response.json();
     },
     onSuccess: () => {
       toast({
@@ -28,7 +41,7 @@ export default function UploadAnswers() {
       });
       setLocation("/dashboard");
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast({
         title: "Upload Failed",
         description: error.message,

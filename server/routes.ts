@@ -5,6 +5,7 @@ import { storage } from "./storage";
 import { generateQuestions, evaluateAnswers } from "./openai";
 import { insertExamSchema, insertAttemptSchema } from "@shared/schema";
 
+// Configure multer for handling file uploads
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
@@ -115,17 +116,30 @@ export async function registerRoutes(app: Express) {
         return res.status(400).json({ message: "No file uploaded" });
       }
 
-      const validation = insertAttemptSchema.safeParse(req.body);
-      if (!validation.success) {
-        return res.status(400).json({ message: "Invalid attempt data" });
+      const examId = parseInt(req.body.examId);
+      const userId = parseInt(req.body.userId);
+      const startTime = new Date(req.body.startTime);
+
+      if (isNaN(examId) || isNaN(userId)) {
+        return res.status(400).json({ message: "Invalid exam ID or user ID" });
       }
 
-      // Process image and evaluate
+      // Get the exam to evaluate against
+      const exam = await storage.getExam(examId);
+      if (!exam) {
+        return res.status(404).json({ message: "Exam not found" });
+      }
+
+      // Process image and evaluate answers
       const imageBuffer = req.file.buffer;
-      const result = await evaluateAnswers(imageBuffer.toString('base64'), validation.data);
+      const result = await evaluateAnswers(imageBuffer.toString('base64'), exam.questions);
 
       const attempt = await storage.createAttempt({
-        ...validation.data,
+        examId,
+        userId,
+        startTime,
+        endTime: new Date(),
+        answerImageUrl: "data:image/jpeg;base64," + imageBuffer.toString('base64'),
         score: result.score,
         feedback: result.feedback
       });
