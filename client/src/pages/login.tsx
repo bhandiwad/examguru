@@ -16,7 +16,7 @@ export default function Login() {
       // Simulate successful login
       toast({
         title: "Login Successful",
-        description: "Welcome to ExamAI!",
+        description: "Welcome to ExamGuru!",
       });
       setLocation("/dashboard");
     } catch (error) {
@@ -34,7 +34,7 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50">
       <Card className="w-[350px]">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">ExamAI</CardTitle>
+          <CardTitle className="text-2xl font-bold">ExamGuru</CardTitle>
           <CardDescription>AI-Powered Exam Generator</CardDescription>
         </CardHeader>
         <CardContent>
