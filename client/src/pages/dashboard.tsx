@@ -117,16 +117,18 @@ export default function Dashboard() {
                       <span>Curriculum: {attempt.exam.curriculum}</span>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <StarIcon className="h-4 w-4 text-primary" />
-                      <div className="flex-1">
-                        <div className="flex justify-between mb-1">
-                          <span className="text-sm font-medium">Score</span>
-                          <span className="text-sm font-medium">{attempt.score}%</span>
+                    {attempt.score !== null && (
+                      <div className="flex items-center gap-2">
+                        <StarIcon className="h-4 w-4 text-primary" />
+                        <div className="flex-1">
+                          <div className="flex justify-between mb-1">
+                            <span className="text-sm font-medium">Score</span>
+                            <span className="text-sm font-medium">{attempt.score}%</span>
+                          </div>
+                          <Progress value={attempt.score} />
                         </div>
-                        <Progress value={attempt.score} />
                       </div>
-                    </div>
+                    )}
 
                     {attempt.feedback && (
                       <Accordion type="single" collapsible className="w-full">
@@ -137,63 +139,75 @@ export default function Dashboard() {
                           <AccordionContent>
                             {attempt.feedback && (
                               <div className="space-y-4 text-sm">
-                                <div>
-                                  <h4 className="font-medium mb-2">Overview</h4>
-                                  <p className="text-gray-600">
-                                    {(attempt.feedback as EvaluationFeedback).overall.summary}
-                                  </p>
-                                </div>
-
-                                <div>
-                                  <h4 className="font-medium mb-2">Strengths</h4>
-                                  <ul className="list-disc pl-4 space-y-1">
-                                    {(attempt.feedback as EvaluationFeedback).overall.strengths.map((strength: string, i: number) => (
-                                      <li key={i} className="text-gray-600">{strength}</li>
-                                    ))}
-                                  </ul>
-                                </div>
-
-                                <div>
-                                  <h4 className="font-medium mb-2">Areas for Improvement</h4>
-                                  <ul className="list-disc pl-4 space-y-1">
-                                    {(attempt.feedback as EvaluationFeedback).overall.areas_for_improvement.map((area: string, i: number) => (
-                                      <li key={i} className="text-gray-600">{area}</li>
-                                    ))}
-                                  </ul>
-                                </div>
-
-                                <div>
-                                  <h4 className="font-medium mb-2">Learning Recommendations</h4>
-                                  <ul className="list-disc pl-4 space-y-1">
-                                    {(attempt.feedback as EvaluationFeedback).overall.learning_recommendations.map((rec: string, i: number) => (
-                                      <li key={i} className="text-gray-600">{rec}</li>
-                                    ))}
-                                  </ul>
-                                </div>
-
-                                <div>
-                                  <h4 className="font-medium mb-2">Performance Analytics</h4>
-                                  <div className="grid grid-cols-3 gap-2 mt-2">
-                                    <div className="text-center p-2 bg-secondary/10 rounded">
-                                      <div className="text-2xl font-bold text-primary">
-                                        {(attempt.feedback as EvaluationFeedback).performanceAnalytics.difficultyAnalysis.easy}%
-                                      </div>
-                                      <div className="text-xs text-gray-500">Easy Questions</div>
+                                {(attempt.feedback as EvaluationFeedback).overall && (
+                                  <>
+                                    <div>
+                                      <h4 className="font-medium mb-2">Overview</h4>
+                                      <p className="text-gray-600">
+                                        {(attempt.feedback as EvaluationFeedback).overall.summary}
+                                      </p>
                                     </div>
-                                    <div className="text-center p-2 bg-secondary/10 rounded">
-                                      <div className="text-2xl font-bold text-primary">
-                                        {(attempt.feedback as EvaluationFeedback).performanceAnalytics.difficultyAnalysis.medium}%
+
+                                    {(attempt.feedback as EvaluationFeedback).overall.strengths && (
+                                      <div>
+                                        <h4 className="font-medium mb-2">Strengths</h4>
+                                        <ul className="list-disc pl-4 space-y-1">
+                                          {(attempt.feedback as EvaluationFeedback).overall.strengths.map((strength, i) => (
+                                            <li key={i} className="text-gray-600">{strength}</li>
+                                          ))}
+                                        </ul>
                                       </div>
-                                      <div className="text-xs text-gray-500">Medium Questions</div>
-                                    </div>
-                                    <div className="text-center p-2 bg-secondary/10 rounded">
-                                      <div className="text-2xl font-bold text-primary">
-                                        {(attempt.feedback as EvaluationFeedback).performanceAnalytics.difficultyAnalysis.hard}%
+                                    )}
+
+                                    {(attempt.feedback as EvaluationFeedback).overall.areas_for_improvement && (
+                                      <div>
+                                        <h4 className="font-medium mb-2">Areas for Improvement</h4>
+                                        <ul className="list-disc pl-4 space-y-1">
+                                          {(attempt.feedback as EvaluationFeedback).overall.areas_for_improvement.map((area, i) => (
+                                            <li key={i} className="text-gray-600">{area}</li>
+                                          ))}
+                                        </ul>
                                       </div>
-                                      <div className="text-xs text-gray-500">Hard Questions</div>
-                                    </div>
-                                  </div>
-                                </div>
+                                    )}
+
+                                    {(attempt.feedback as EvaluationFeedback).overall.learning_recommendations && (
+                                      <div>
+                                        <h4 className="font-medium mb-2">Learning Recommendations</h4>
+                                        <ul className="list-disc pl-4 space-y-1">
+                                          {(attempt.feedback as EvaluationFeedback).overall.learning_recommendations.map((rec, i) => (
+                                            <li key={i} className="text-gray-600">{rec}</li>
+                                          ))}
+                                        </ul>
+                                      </div>
+                                    )}
+
+                                    {(attempt.feedback as EvaluationFeedback).performanceAnalytics?.difficultyAnalysis && (
+                                      <div>
+                                        <h4 className="font-medium mb-2">Performance Analytics</h4>
+                                        <div className="grid grid-cols-3 gap-2 mt-2">
+                                          <div className="text-center p-2 bg-secondary/10 rounded">
+                                            <div className="text-2xl font-bold text-primary">
+                                              {(attempt.feedback as EvaluationFeedback).performanceAnalytics.difficultyAnalysis.easy}%
+                                            </div>
+                                            <div className="text-xs text-gray-500">Easy Questions</div>
+                                          </div>
+                                          <div className="text-center p-2 bg-secondary/10 rounded">
+                                            <div className="text-2xl font-bold text-primary">
+                                              {(attempt.feedback as EvaluationFeedback).performanceAnalytics.difficultyAnalysis.medium}%
+                                            </div>
+                                            <div className="text-xs text-gray-500">Medium Questions</div>
+                                          </div>
+                                          <div className="text-center p-2 bg-secondary/10 rounded">
+                                            <div className="text-2xl font-bold text-primary">
+                                              {(attempt.feedback as EvaluationFeedback).performanceAnalytics.difficultyAnalysis.hard}%
+                                            </div>
+                                            <div className="text-xs text-gray-500">Hard Questions</div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </>
+                                )}
                               </div>
                             )}
                           </AccordionContent>
