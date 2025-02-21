@@ -1,12 +1,14 @@
 import { useState, useEffect } from "react";
 import { useLocation, useParams } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
 import type { Exam } from "@shared/schema";
+import { apiRequest } from "@/lib/queryClient";
 
 type Question = {
   type: string;
@@ -29,10 +31,41 @@ export default function TakeExam() {
   const params = useParams<{ id: string }>();
   const [timeLeft, setTimeLeft] = useState(7200); // 2 hours in seconds
   const [isRunning, setIsRunning] = useState(false);
+  const [startTime] = useState(new Date());
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: exam, isLoading } = useQuery<Exam>({
     queryKey: [`/api/exams/${params.id}`],
     enabled: !!params.id
+  });
+
+  const submitMutation = useMutation({
+    mutationFn: async (formData: FormData) => {
+      const response = await apiRequest("POST", "/api/attempts/upload", formData, {
+        isFormData: true
+      });
+      if (!response.ok) {
+        throw new Error("Failed to submit exam");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/attempts"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/exams"] });
+      toast({
+        title: "Success",
+        description: "Your answers have been submitted successfully."
+      });
+      setLocation("/dashboard");
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
   });
 
   useEffect(() => {
@@ -56,9 +89,43 @@ export default function TakeExam() {
     setIsRunning(true);
   };
 
-  const finishExam = () => {
+  const finishExam = async () => {
     setIsRunning(false);
-    setLocation("/upload");
+
+    if (!exam) return;
+
+    const formData = new FormData();
+    formData.append("examId", exam.id.toString());
+    formData.append("userId", "1"); // TODO: Replace with actual user ID
+    formData.append("startTime", startTime.toISOString());
+
+    const examContent = document.querySelector(".prose")?.innerHTML;
+    if (!examContent) {
+      toast({
+        title: "Error",
+        description: "Could not capture exam content",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    const tempDiv = document.createElement("div");
+    tempDiv.innerHTML = examContent;
+
+    canvas.toBlob((blob) => {
+      if (!blob) {
+        toast({
+          title: "Error",
+          description: "Failed to capture answers",
+          variant: "destructive"
+        });
+        return;
+      }
+      formData.append("answer", blob, "answer.png");
+      submitMutation.mutate(formData);
+    });
   };
 
   if (isLoading) {
@@ -88,7 +155,13 @@ export default function TakeExam() {
             {!isRunning ? (
               <Button onClick={startExam}>Start Exam</Button>
             ) : (
-              <Button onClick={finishExam} variant="destructive">Finish Exam</Button>
+              <Button 
+                onClick={finishExam} 
+                variant="destructive"
+                disabled={submitMutation.isPending}
+              >
+                {submitMutation.isPending ? "Submitting..." : "Finish Exam"}
+              </Button>
             )}
           </CardTitle>
         </CardHeader>

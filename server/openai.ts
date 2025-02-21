@@ -186,7 +186,12 @@ export async function evaluateAnswers(imageBase64: string, questions: any) {
           content: [
             {
               type: "text",
-              text: "Analyze this exam answer sheet and evaluate each answer based on the given questions. Focus on the correctness, completeness, and clarity of the responses."
+              text: `Analyze this exam answer sheet and evaluate each answer based on the given questions.
+                     Focus on:
+                     1. The correctness and completeness of the responses
+                     2. Subject-specific concepts and terminology
+                     3. Problem-solving approach and methodology
+                     4. Clarity of explanations and diagrams`
             },
             {
               type: "image_url",
@@ -207,23 +212,30 @@ export async function evaluateAnswers(imageBase64: string, questions: any) {
     const analysis = visionResponse.choices[0].message.content;
     console.log("Vision analysis completed:", analysis);
 
+    // Extract subject and other metadata from questions
+    const examSubject = questions[0]?.subject || "General";
+    const examTopic = questions[0]?.topic || "Multiple Topics";
+
     // Now evaluate the answers based on the analysis
     const evaluationPrompt = `
+    You are evaluating a ${examSubject} exam paper. 
     Based on this analysis of the exam answers:
     ${analysis}
 
     And these exam questions:
     ${JSON.stringify(questions)}
 
+    Consider the specific requirements and terminology of ${examSubject} when evaluating.
+
     Provide a comprehensive evaluation in this EXACT JSON format:
     {
       "score": 85,
       "feedback": {
         "overall": {
-          "summary": "Brief overall assessment",
-          "strengths": ["strength 1", "strength 2"],
+          "summary": "Brief overall assessment specific to ${examSubject}",
+          "strengths": ["strength 1 related to ${examSubject}", "strength 2"],
           "areas_for_improvement": ["area 1", "area 2"],
-          "learning_recommendations": ["recommendation 1", "recommendation 2"]
+          "learning_recommendations": ["${examSubject}-specific recommendation 1", "recommendation 2"]
         },
         "perQuestion": [
           {
@@ -231,23 +243,23 @@ export async function evaluateAnswers(imageBase64: string, questions: any) {
             "score": 90,
             "conceptualUnderstanding": {
               "level": "Excellent",
-              "details": "Explanation"
+              "details": "Explanation focusing on ${examSubject} concepts"
             },
             "technicalAccuracy": {
               "score": 85,
-              "details": "Details"
+              "details": "Details about ${examSubject}-specific accuracy"
             },
-            "keyConceptsCovered": ["concept 1", "concept 2"],
-            "misconceptions": ["misconception 1"],
+            "keyConceptsCovered": ["${examSubject} concept 1", "concept 2"],
+            "misconceptions": ["Common ${examSubject} misconception 1"],
             "improvementAreas": ["improvement 1"],
-            "exemplarAnswer": "Brief example"
+            "exemplarAnswer": "Brief example showing correct ${examSubject} approach"
           }
         ],
         "performanceAnalytics": {
-          "conceptualStrengths": ["strength 1"],
-          "technicalStrengths": ["strength 1"],
+          "conceptualStrengths": ["${examSubject} strength 1"],
+          "technicalStrengths": ["${examSubject} technique 1"],
           "learningPatterns": ["pattern 1"],
-          "recommendedTopics": ["topic 1"],
+          "recommendedTopics": ["Advanced ${examSubject} topic 1"],
           "difficultyAnalysis": {
             "easy": 95,
             "medium": 85,
@@ -262,7 +274,7 @@ export async function evaluateAnswers(imageBase64: string, questions: any) {
       messages: [
         { 
           role: "system", 
-          content: "You are an expert exam evaluator. Provide detailed feedback in the exact JSON format specified." 
+          content: `You are an expert ${examSubject} exam evaluator. Provide detailed feedback focusing on ${examSubject}-specific concepts and methodologies.` 
         },
         { 
           role: "user", 
