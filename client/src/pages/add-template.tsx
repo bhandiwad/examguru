@@ -60,6 +60,10 @@ export default function AddTemplate() {
       };
 
       const response = await apiRequest("POST", "/api/templates", formattedData);
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to create template");
+      }
       return response.json();
     },
     onSuccess: () => {
@@ -187,7 +191,221 @@ export default function AddTemplate() {
                   </FormItem>
                 )}
               />
-              {/* ...rest of the form fields... */}
+
+              <FormField
+                control={form.control}
+                name="curriculum"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Curriculum</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select curriculum" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {CURRICULA.map((curr) => (
+                          <SelectItem key={curr} value={curr}>{curr}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="subject"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Subject</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g. Physics" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="grade"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Grade</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select grade" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {GRADES.map((grade) => (
+                          <SelectItem key={grade} value={grade}>Grade {grade}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Question Type</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select question type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {QUESTION_TYPES.map((type) => (
+                          <SelectItem key={type} value={type}>{type}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="paperFormat"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Paper Format Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g. Annual Examination Format" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="template.structure"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Question Structure</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Describe the structure of questions (e.g. 'Each theory question should have sub-parts a, b, c')"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-medium">Sections</h3>
+                  <Button type="button" variant="outline" onClick={addSection}>
+                    Add Section
+                  </Button>
+                </div>
+
+                {sections.map((section, index) => (
+                  <Card key={index} className="p-4">
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <FormItem>
+                          <FormLabel>Section Name</FormLabel>
+                          <Input
+                            value={section.name}
+                            onChange={(e) => updateSection(index, "name", e.target.value)}
+                            placeholder="e.g. Section A"
+                          />
+                        </FormItem>
+                        <FormItem>
+                          <FormLabel>Question Type</FormLabel>
+                          <Select onValueChange={(value) => updateSection(index, "questionType", value)}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {QUESTION_TYPES.map((type) => (
+                                <SelectItem key={type} value={type}>{type}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </FormItem>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <FormItem>
+                          <FormLabel>Number of Questions</FormLabel>
+                          <Input
+                            type="number"
+                            value={section.questionCount}
+                            onChange={(e) => updateSection(index, "questionCount", parseInt(e.target.value))}
+                          />
+                        </FormItem>
+                        <FormItem>
+                          <FormLabel>Marks per Question</FormLabel>
+                          <Input
+                            type="number"
+                            value={section.marksPerQuestion}
+                            onChange={(e) => updateSection(index, "marksPerQuestion", parseInt(e.target.value))}
+                          />
+                        </FormItem>
+                      </div>
+                      <FormItem>
+                        <FormLabel>Format Instructions</FormLabel>
+                        <Input
+                          value={section.format}
+                          onChange={(e) => updateSection(index, "format", e.target.value)}
+                          placeholder="e.g. 'Answer any 5 questions'"
+                        />
+                      </FormItem>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+
+              <FormField
+                control={form.control}
+                name="formatMetadata.duration"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Duration (minutes)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        {...field}
+                        onChange={(e) => field.onChange(Number(e.target.value))}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="template.rubric"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>General Rubric</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="General marking guidelines for the paper"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               <Button
                 type="submit"
                 className="w-full"
