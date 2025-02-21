@@ -241,3 +241,63 @@ export async function evaluateAnswers(imageBase64: string, questions: any) {
     throw new Error(`Failed to evaluate answers: ${error.message}`);
   }
 }
+
+// Add this new function for analyzing question paper images
+export async function analyzeQuestionPaperTemplate(imageBase64: string) {
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4-vision-preview",
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: `Analyze this question paper image and extract its format structure.
+              Focus on:
+              1. Identifying distinct sections
+              2. Number of questions in each section
+              3. Question types (MCQ, Theory, Numerical)
+              4. Marks distribution
+              5. Any special instructions or format rules
+
+              Provide the analysis in this exact JSON format:
+              {
+                "sections": [
+                  {
+                    "name": "string (e.g., 'Section A')",
+                    "questionCount": number,
+                    "questionType": "MCQ|Theory|Numerical|Mixed",
+                    "marksPerQuestion": number,
+                    "format": "string (any special instructions)"
+                  }
+                ],
+                "totalMarks": number,
+                "duration": number (in minutes),
+                "specialInstructions": ["string"]
+              }`
+            },
+            {
+              type: "image_url",
+              image_url: {
+                url: `data:image/jpeg;base64,${imageBase64}`
+              }
+            }
+          ],
+        },
+      ],
+      max_tokens: 1000,
+    });
+
+    if (!response.choices[0].message.content) {
+      throw new Error("No content received from OpenAI");
+    }
+
+    const template = JSON.parse(response.choices[0].message.content);
+    console.log("Extracted template structure:", template);
+    return template;
+  } catch (error: any) {
+    console.error("Error analyzing question paper:", error);
+    throw new Error(`Failed to analyze question paper: ${error.message}`);
+  }
+}

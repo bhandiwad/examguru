@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer } from "http";
 import multer from "multer";
 import { storage } from "./storage";
-import { generateQuestions, evaluateAnswers } from "./openai";
+import { generateQuestions, evaluateAnswers, analyzeQuestionPaperTemplate } from "./openai"; // Added analyzeQuestionPaperTemplate
 import { insertExamSchema, insertAttemptSchema, insertQuestionTemplateSchema } from "@shared/schema";
 
 // Configure multer for handling file uploads
@@ -86,6 +86,27 @@ export async function registerRoutes(app: Express) {
       });
     }
   });
+
+  // Add this endpoint for uploading and analyzing question paper images
+  app.post("/api/templates/analyze-image", upload.single("questionPaper"), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      const imageBase64 = req.file.buffer.toString('base64');
+      const template = await analyzeQuestionPaperTemplate(imageBase64);
+
+      res.json(template);
+    } catch (error: any) {
+      console.error("Error analyzing template:", error);
+      res.status(500).json({
+        message: "Failed to analyze template",
+        error: error.message
+      });
+    }
+  });
+
 
   // Modified exam creation to use custom templates
   app.post("/api/exams", async (req, res) => {
