@@ -2,11 +2,13 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { PlusCircle, Clock, FileText, BookOpen } from "lucide-react";
+import { PlusCircle, Clock, FileText, BookOpen, Star } from "lucide-react";
 import type { Attempt, Exam } from "@shared/schema";
 
+type AttemptWithExam = Attempt & { exam: Exam };
+
 export default function Dashboard() {
-  const { data: attempts, isLoading: attemptsLoading } = useQuery<Attempt[]>({
+  const { data: attempts, isLoading: attemptsLoading } = useQuery<AttemptWithExam[]>({
     queryKey: ["/api/attempts"]
   });
 
@@ -30,7 +32,7 @@ export default function Dashboard() {
 
       {exams && exams.length > 0 && (
         <div className="mb-8">
-          <h2 className="text-xl font-semibold mb-4">Your Exams</h2>
+          <h2 className="text-xl font-semibold mb-4">Available Exams</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {exams.map((exam) => (
               <Card key={exam.id} className="bg-primary/5">
@@ -79,16 +81,28 @@ export default function Dashboard() {
             {attempts.map((attempt) => (
               <Card key={attempt.id}>
                 <CardHeader>
-                  <CardTitle>{attempt.examId}</CardTitle>
+                  <CardTitle>{attempt.exam.subject}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
-                    <Clock className="h-4 w-4" />
-                    {new Date(attempt.startTime).toLocaleDateString()}
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-500">
-                    <FileText className="h-4 w-4" />
-                    Score: {attempt.score || "Not evaluated"}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                      <Clock className="h-4 w-4" />
+                      <span>Attempted: {new Date(attempt.startTime).toLocaleDateString()}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                      <BookOpen className="h-4 w-4" />
+                      <span>Curriculum: {attempt.exam.curriculum}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                      <Star className="h-4 w-4" />
+                      <span>Score: {attempt.score !== null ? `${attempt.score}%` : "Not evaluated"}</span>
+                    </div>
+                    {attempt.feedback && (
+                      <div className="mt-2 text-sm">
+                        <p className="font-medium">Feedback:</p>
+                        <p className="text-gray-600">{attempt.feedback.overall}</p>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>

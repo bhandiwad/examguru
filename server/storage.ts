@@ -9,7 +9,7 @@ export interface IStorage {
   createExam(exam: InsertExam & { userId: number, questions: any[] }): Promise<Exam>;
   getUserExams(userId: number): Promise<Exam[]>;
   getExam(examId: number): Promise<Exam | undefined>;
-  getAttempts(userId: number): Promise<Attempt[]>;
+  getAttempts(userId: number): Promise<(Attempt & { exam: Exam })[]>;
   createAttempt(attempt: InsertAttempt): Promise<Attempt>;
 }
 
@@ -62,11 +62,21 @@ export class DatabaseStorage implements IStorage {
     return exam;
   }
 
-  async getAttempts(userId: number): Promise<Attempt[]> {
-    return db
-      .select()
+  async getAttempts(userId: number): Promise<(Attempt & { exam: Exam })[]> {
+    const results = await db
+      .select({
+        attempt: attempts,
+        exam: exams
+      })
       .from(attempts)
-      .where(eq(attempts.userId, userId));
+      .where(eq(attempts.userId, userId))
+      .innerJoin(exams, eq(attempts.examId, exams.id))
+      .orderBy(desc(attempts.startTime));
+
+    return results.map(({ attempt, exam }) => ({
+      ...attempt,
+      exam
+    }));
   }
 
   async createAttempt(insertAttempt: InsertAttempt): Promise<Attempt> {
