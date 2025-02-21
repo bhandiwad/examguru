@@ -14,7 +14,11 @@ export const questionTemplates = pgTable("question_templates", {
   subject: text("subject").notNull(),
   grade: text("grade").notNull(),
   type: text("type").notNull(), 
+  institution: text("institution"),
+  paperFormat: text("paper_format"),
   template: jsonb("template").notNull(),
+  sampleQuestions: jsonb("sample_questions"),
+  formatMetadata: jsonb("format_metadata"),
   createdAt: timestamp("created_at").notNull().defaultNow()
 });
 
@@ -27,6 +31,7 @@ export const exams = pgTable("exams", {
   difficulty: text("difficulty").notNull(),
   format: jsonb("format").notNull(),
   questions: jsonb("questions").notNull(),
+  templateId: integer("template_id"), // Reference to the template used
   createdAt: timestamp("created_at").notNull().defaultNow()
 });
 
@@ -46,12 +51,27 @@ export const insertQuestionTemplateSchema = z.object({
   subject: z.string().min(1, "Subject is required"),
   grade: z.string().min(1, "Grade is required"),
   type: z.string().min(1, "Question type is required"),
+  institution: z.string().optional(),
+  paperFormat: z.string().optional(),
   template: z.object({
     structure: z.string(),
     marks: z.number(),
     rubric: z.string(),
     examples: z.array(z.string())
-  })
+  }),
+  sampleQuestions: z.array(z.any()).optional(),
+  formatMetadata: z.object({
+    sections: z.array(z.object({
+      name: z.string(),
+      questionCount: z.number(),
+      marksPerQuestion: z.number(),
+      questionType: z.string(),
+      format: z.string()
+    })).optional(),
+    totalMarks: z.number().optional(),
+    duration: z.number().optional(),
+    specialInstructions: z.array(z.string()).optional()
+  }).optional()
 });
 
 export const insertExamSchema = z.object({
@@ -65,7 +85,8 @@ export const insertExamSchema = z.object({
       type: z.string(),
       marks: z.number()
     }))
-  })
+  }),
+  templateId: z.number().optional()
 });
 
 export const insertAttemptSchema = z.object({

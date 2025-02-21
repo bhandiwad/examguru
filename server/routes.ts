@@ -13,6 +13,50 @@ const upload = multer({
 
 export async function registerRoutes(app: Express) {
   // Template management routes
+  app.get("/api/templates/search", async (req, res) => {
+    try {
+      const { curriculum, subject, grade, institution, paperFormat } = req.query;
+
+      const templates = await storage.getTemplates({
+        curriculum: curriculum as string,
+        subject: subject as string,
+        grade: grade as string,
+        institution: institution as string,
+        paperFormat: paperFormat as string
+      });
+
+      res.json(templates);
+    } catch (error: any) {
+      console.error("Error searching templates:", error);
+      res.status(500).json({
+        message: "Failed to search templates",
+        error: error.message
+      });
+    }
+  });
+
+  app.get("/api/templates/:id", async (req, res) => {
+    try {
+      const templateId = parseInt(req.params.id);
+      if (isNaN(templateId)) {
+        return res.status(400).json({ message: "Invalid template ID" });
+      }
+
+      const template = await storage.getTemplateById(templateId);
+      if (!template) {
+        return res.status(404).json({ message: "Template not found" });
+      }
+
+      res.json(template);
+    } catch (error: any) {
+      console.error("Error fetching template:", error);
+      res.status(500).json({
+        message: "Failed to fetch template",
+        error: error.message
+      });
+    }
+  });
+
   app.post("/api/templates", async (req, res) => {
     try {
       const validation = insertQuestionTemplateSchema.safeParse(req.body);
@@ -34,29 +78,7 @@ export async function registerRoutes(app: Express) {
     }
   });
 
-  app.get("/api/templates", async (req, res) => {
-    try {
-      const { curriculum, subject, grade } = req.query;
-      if (!curriculum || !subject || !grade) {
-        return res.status(400).json({ message: "Missing required query parameters" });
-      }
-
-      const templates = await storage.getTemplates(
-        curriculum as string,
-        subject as string,
-        grade as string
-      );
-      res.json(templates);
-    } catch (error: any) {
-      console.error("Error fetching templates:", error);
-      res.status(500).json({
-        message: "Failed to fetch templates",
-        error: error.message
-      });
-    }
-  });
-
-  // Modified exam creation to use templates
+  // Modified exam creation to use custom templates
   app.post("/api/exams", async (req, res) => {
     try {
       console.log("Received exam creation request:", req.body);
@@ -74,13 +96,22 @@ export async function registerRoutes(app: Express) {
       const userId = 1; // Temporary for testing
 
       // Get relevant templates
-      const templates = await storage.getTemplates(
-        validation.data.curriculum,
-        validation.data.subject,
-        validation.data.grade
-      );
+      const templates = await storage.getTemplates({
+        curriculum: validation.data.curriculum,
+        subject: validation.data.subject,
+        grade: validation.data.grade
+      });
 
       console.log("Found templates:", templates.length);
+
+      // Get selected custom template if specified
+      let selectedTemplate;
+      if (validation.data.templateId) {
+        selectedTemplate = await storage.getTemplateById(validation.data.templateId);
+        if (!selectedTemplate) {
+          return res.status(404).json({ message: "Selected template not found" });
+        }
+      }
 
       console.log("Generating questions with validated data:", validation.data);
       const generatedContent = await generateQuestions(
@@ -89,7 +120,8 @@ export async function registerRoutes(app: Express) {
         validation.data.grade,
         validation.data.difficulty,
         validation.data.format,
-        templates
+        templates,
+        selectedTemplate
       );
 
       if (!generatedContent.questions || !Array.isArray(generatedContent.questions)) {

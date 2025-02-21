@@ -9,7 +9,8 @@ export async function generateQuestions(
   grade: string,
   difficulty: string,
   format: any,
-  templates: any[]
+  templates: any[],
+  selectedTemplate?: any
 ) {
   console.log("Generating questions with params:", {
     subject,
@@ -17,14 +18,23 @@ export async function generateQuestions(
     grade,
     difficulty,
     format,
-    templateCount: templates.length
+    templateCount: templates.length,
+    customTemplate: selectedTemplate ? "yes" : "no"
   });
 
-  const prompt = `Generate an exam paper for ${subject} (${grade} grade) following ${curriculum} curriculum.
+  let promptContent = `Generate an exam paper for ${subject} (${grade} grade) following ${curriculum} curriculum.
   Difficulty level: ${difficulty}
-  Format: ${JSON.stringify(format)}
+  Format: ${JSON.stringify(format)}`;
 
-  Use these curriculum-specific templates as guidelines:
+  if (selectedTemplate) {
+    promptContent += `\n\nUse this specific institution's format:
+    Institution: ${selectedTemplate.institution}
+    Paper Format: ${selectedTemplate.paperFormat}
+    Format Details: ${JSON.stringify(selectedTemplate.formatMetadata, null, 2)}
+    Sample Structure: ${JSON.stringify(selectedTemplate.template, null, 2)}`;
+  }
+
+  promptContent += `\n\nUse these curriculum-specific templates as guidelines:
   ${JSON.stringify(templates, null, 2)}
 
   Please provide the questions in JSON format with the following structure:
@@ -35,21 +45,23 @@ export async function generateQuestions(
         "text": "string",
         "marks": number,
         "expectedAnswer": "string",
-        "rubric": "string"
+        "rubric": "string",
+        "section": "string"
       }
     ]
   }
 
   Ensure that:
-  1. Questions follow the curriculum standards
+  1. Questions follow the curriculum standards and institution format (if specified)
   2. Each question matches the template structure
   3. Difficulty level is appropriate for the grade
-  4. Total marks match the format specification`;
+  4. Total marks match the format specification
+  5. Questions maintain the style and structure of the institution's format (if specified)`;
 
   try {
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
-      messages: [{ role: "user", content: prompt }],
+      messages: [{ role: "user", content: promptContent }],
       response_format: { type: "json_object" }
     });
 
