@@ -18,36 +18,71 @@ import { Label } from "@/components/ui/label";
 const CURRICULA = ["ICSE", "CBSE", "Karnataka State Board"];
 const DIFFICULTIES = ["Easy", "Medium", "Hard"];
 const GRADES = ["8", "9", "10", "11", "12"];
-
-// Define available subjects
 const SUBJECTS = ["Mathematics", "Physics", "Chemistry"];
 
-// Example chapters by subject
-const SUBJECT_CHAPTERS = {
-  "Mathematics": [
-    "Algebra",
-    "Geometry",
-    "Trigonometry",
-    "Calculus",
-    "Statistics",
-    "Probability"
-  ],
-  "Physics": [
-    "Mechanics",
-    "Optics",
-    "Thermodynamics",
-    "Electricity",
-    "Magnetism",
-    "Modern Physics"
-  ],
-  "Chemistry": [
-    "Organic Chemistry",
-    "Inorganic Chemistry",
-    "Physical Chemistry",
-    "Atomic Structure",
-    "Chemical Bonding",
-    "Electrochemistry"
-  ]
+// Detailed chapter information by curriculum, grade, and subject
+const TEXTBOOK_CHAPTERS = {
+  "ICSE": {
+    "8": {
+      "Mathematics": {
+        title: "Concise Mathematics Middle School (NEP 2020 aligned)",
+        publisher: "Selina",
+        author: "RK Bansal",
+        chapters: [
+          "Number Systems",
+          "Operations on Numbers",
+          "Squares and Square Roots",
+          "Cubes and Cube Roots",
+          "Exponents and Powers",
+          "Algebraic Expressions and Identities",
+          "Linear Equations in One Variable",
+          "Understanding Quadrilaterals",
+          "Data Handling",
+          "Mensuration",
+          "Introduction to Graphs",
+          "Direct and Inverse Proportions",
+          "Factorisation",
+          "Introduction to Pythagoras Theorem"
+        ]
+      },
+      "Physics": {
+        title: "Concise Physics Middle School",
+        publisher: "Selina",
+        author: "Dr RP Goyal",
+        chapters: [
+          "Force and Pressure",
+          "Friction",
+          "Sound",
+          "Light",
+          "Energy",
+          "Heat Transfer",
+          "Electric Current and its Effects",
+          "Magnetic Effects of Current",
+          "Some Natural Phenomena",
+          "Stars and the Solar System"
+        ]
+      },
+      "Chemistry": {
+        title: "Concise Chemistry Middle School",
+        publisher: "Selina",
+        author: "Dr Sunil Manchanda",
+        chapters: [
+          "Matter",
+          "Physical and Chemical Changes",
+          "Elements, Compounds and Mixtures",
+          "Atomic Structure",
+          "Language of Chemistry",
+          "Chemical Reactions",
+          "Acids, Bases and Salts",
+          "Metals and Non-metals",
+          "Air and Water",
+          "Carbon and its Compounds"
+        ]
+      }
+    }
+    // Add other grades here...
+  }
+  // Add other curricula here...
 };
 
 type FormData = {
@@ -74,25 +109,44 @@ export default function CreateExam() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [selectedInstitution, setSelectedInstitution] = useState<string>("");
   const [availableChapters, setAvailableChapters] = useState<string[]>([]);
+  const [textbookInfo, setTextbookInfo] = useState<{
+    title?: string;
+    author?: string;
+    publisher?: string;
+  }>({});
 
   const form = useForm<FormData>({
     resolver: zodResolver(insertExamSchema),
     defaultValues: {
       curriculum: CURRICULA[0],
       subject: SUBJECTS[0],
-      grade: GRADES[2],
+      grade: GRADES[0],
       difficulty: DIFFICULTIES[0],
       format: defaultFormat,
       chapters: []
     }
   });
 
-  // Watch subject changes to update available chapters
+  // Watch for changes in curriculum, grade, and subject to update available chapters
   useEffect(() => {
+    const curriculum = form.watch("curriculum");
+    const grade = form.watch("grade");
     const subject = form.watch("subject");
-    const chapters = SUBJECT_CHAPTERS[subject as keyof typeof SUBJECT_CHAPTERS] || [];
-    setAvailableChapters(chapters);
-  }, [form.watch("subject")]);
+
+    const textbookData = TEXTBOOK_CHAPTERS[curriculum as keyof typeof TEXTBOOK_CHAPTERS]?.[grade as keyof typeof TEXTBOOK_CHAPTERS["ICSE"]]?.[subject as keyof typeof TEXTBOOK_CHAPTERS["ICSE"]["8"]];
+
+    if (textbookData) {
+      setAvailableChapters(textbookData.chapters);
+      setTextbookInfo({
+        title: textbookData.title,
+        author: textbookData.author,
+        publisher: textbookData.publisher
+      });
+    } else {
+      setAvailableChapters([]);
+      setTextbookInfo({});
+    }
+  }, [form.watch("curriculum"), form.watch("grade"), form.watch("subject")]);
 
   const { data: templates, isLoading: templatesLoading } = useQuery<QuestionTemplate[]>({
     queryKey: ["/api/templates/search", form.watch("curriculum"), form.watch("subject"), form.watch("grade")],
@@ -275,8 +329,15 @@ export default function CreateExam() {
                 render={({ field }) => (
                   <FormItem className="space-y-4">
                     <FormLabel>Chapters to Include</FormLabel>
+                    {textbookInfo.title && (
+                      <div className="text-sm text-muted-foreground mb-4">
+                        <p><strong>Textbook:</strong> {textbookInfo.title}</p>
+                        <p><strong>Author:</strong> {textbookInfo.author}</p>
+                        <p><strong>Publisher:</strong> {textbookInfo.publisher}</p>
+                      </div>
+                    )}
                     <div className="border rounded-lg p-4 space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 gap-4">
                         {availableChapters.map((chapter) => (
                           <div key={chapter} className="flex items-center space-x-2">
                             <Checkbox
@@ -295,7 +356,7 @@ export default function CreateExam() {
                       </div>
                       {availableChapters.length === 0 && (
                         <p className="text-sm text-muted-foreground text-center">
-                          Please select a subject to see available chapters
+                          Please select a curriculum, grade, and subject to see available chapters
                         </p>
                       )}
                     </div>
