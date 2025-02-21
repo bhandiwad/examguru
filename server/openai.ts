@@ -39,7 +39,7 @@ export async function generateQuestions(
 
   if (selectedTemplate) {
     const sections = selectedTemplate.formatMetadata.sections;
-    const sectionRequirements = sections.map(section => 
+    const sectionRequirements = sections.map(section =>
       `Section ${section.name}:
        - Must have EXACTLY ${section.questionCount} questions
        - Question type: ${section.questionType}
@@ -179,7 +179,7 @@ export async function evaluateAnswers(imageBase64: string, questions: any) {
   try {
     // First, analyze the image to extract text and context
     const visionResponse = await openai.chat.completions.create({
-      model: "gpt-4o", 
+      model: "gpt-4-vision-preview",  // Using vision model for image analysis
       messages: [
         {
           role: "user",
@@ -215,48 +215,48 @@ export async function evaluateAnswers(imageBase64: string, questions: any) {
 
     Provide a detailed evaluation in this EXACT JSON format:
     {
-      "score": number,
+      "score": 85,
       "feedback": {
         "overall": {
-          "summary": "string",
-          "strengths": ["string"],
-          "areas_for_improvement": ["string"],
-          "learning_recommendations": ["string"]
+          "summary": "Good understanding of core concepts with some areas for improvement",
+          "strengths": ["Clear explanation of key concepts", "Well-structured responses"],
+          "areas_for_improvement": ["More detailed examples needed", "Better mathematical notation"],
+          "learning_recommendations": ["Review chapter 5", "Practice problem-solving"]
         },
         "perQuestion": [
           {
-            "questionNumber": number,
-            "score": number,
+            "questionNumber": 1,
+            "score": 90,
             "conceptualUnderstanding": {
-              "level": "Excellent|Good|Fair|Needs Improvement",
-              "details": "string"
+              "level": "Excellent",
+              "details": "Shows deep understanding of the concept"
             },
             "technicalAccuracy": {
-              "score": number,
-              "details": "string"
+              "score": 85,
+              "details": "Minor calculation errors"
             },
-            "keyConceptsCovered": ["string"],
-            "misconceptions": ["string"],
-            "improvementAreas": ["string"],
-            "exemplarAnswer": "string"
+            "keyConceptsCovered": ["Integration", "Derivatives"],
+            "misconceptions": ["None identified"],
+            "improvementAreas": ["Show more steps"],
+            "exemplarAnswer": "A complete solution would include..."
           }
         ],
         "performanceAnalytics": {
-          "conceptualStrengths": ["string"],
-          "technicalStrengths": ["string"],
-          "learningPatterns": ["string"],
-          "recommendedTopics": ["string"],
+          "conceptualStrengths": ["Mathematical reasoning", "Problem analysis"],
+          "technicalStrengths": ["Calculation accuracy", "Formula application"],
+          "learningPatterns": ["Strong in theory", "Needs practice in application"],
+          "recommendedTopics": ["Complex numbers", "Vector calculus"],
           "difficultyAnalysis": {
-            "easy": number,
-            "medium": number,
-            "hard": number
+            "easy": 95,
+            "medium": 85,
+            "hard": 75
           }
         }
       }
     }`;
 
     const evaluationResponse = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4",  // Using standard GPT-4 for evaluation
       messages: [{ role: "user", content: evaluationPrompt }],
       temperature: 0.3,
       max_tokens: 2000,
@@ -279,7 +279,7 @@ export async function evaluateAnswers(imageBase64: string, questions: any) {
 export async function analyzeQuestionPaperTemplate(imageBase64: string) {
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-4o", 
+      model: "gpt-4-vision-preview",
       messages: [
         {
           role: "user",
