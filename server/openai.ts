@@ -27,13 +27,10 @@ export async function generateQuestions(
 
   STRICT REQUIREMENTS:
   1. You MUST follow the exact section structure and question count from the template
-  2. For Section A:
-     - Generate EXACTLY 15 MCQ questions
+  2. Each section must contain EXACTLY the number of questions specified in the template
+  3. For MCQ type questions:
      - Each MCQ MUST have exactly 4 choices labeled A, B, C, D
-     - Each MCQ worth 1 mark
-  3. For Section B:
-     - Questions should be a mix of theory and numerical problems
-     - Each question worth 5 marks
+     - Include the correct answer
   4. For diagrams:
      - Only include simple, 2D diagrams for physics concepts (e.g., force diagrams, ray diagrams)
      - Keep diagrams black and white, minimal design
@@ -41,9 +38,22 @@ export async function generateQuestions(
   5. The total marks must exactly match the template specification`;
 
   if (selectedTemplate) {
+    const sections = selectedTemplate.formatMetadata.sections;
+    const sectionRequirements = sections.map(section => 
+      `Section ${section.name}:
+       - Must have EXACTLY ${section.questionCount} questions
+       - Question type: ${section.questionType}
+       - Marks per question: ${section.marksPerQuestion}
+       - Format: ${section.format}`
+    ).join('\n');
+
     promptContent += `\n\nUSE THIS EXACT TEMPLATE FORMAT:
     Institution: ${selectedTemplate.institution}
     Paper Format: ${selectedTemplate.paperFormat}
+
+    SECTION REQUIREMENTS:
+    ${sectionRequirements}
+
     Format Details: ${JSON.stringify(selectedTemplate.formatMetadata, null, 2)}
     Sample Structure: ${JSON.stringify(selectedTemplate.template, null, 2)}`;
   }
@@ -57,7 +67,7 @@ export async function generateQuestions(
       {
         "type": "MCQ",
         "text": "string",
-        "marks": 1,
+        "marks": number,
         "choices": {
           "A": "string",
           "B": "string",
@@ -72,7 +82,7 @@ export async function generateQuestions(
       {
         "type": "Theory|Numerical",
         "text": "string",
-        "marks": 5,
+        "marks": number,
         "expectedAnswer": "string",
         "rubric": "string",
         "section": "string",
@@ -109,6 +119,28 @@ export async function generateQuestions(
       if (questionsInSection !== section.questionCount) {
         throw new Error(
           `Invalid number of questions in section ${section.name}. Expected ${section.questionCount}, got ${questionsInSection}`
+        );
+      }
+
+      // Validate question types match the section requirements
+      const invalidTypeQuestions = parsedResponse.questions.filter(
+        (q: any) => q.section === section.name && q.type !== section.questionType
+      );
+
+      if (invalidTypeQuestions.length > 0) {
+        throw new Error(
+          `Invalid question types in section ${section.name}. All questions must be of type ${section.questionType}`
+        );
+      }
+
+      // Validate marks per question
+      const invalidMarksQuestions = parsedResponse.questions.filter(
+        (q: any) => q.section === section.name && q.marks !== section.marksPerQuestion
+      );
+
+      if (invalidMarksQuestions.length > 0) {
+        throw new Error(
+          `Invalid marks in section ${section.name}. All questions must be worth ${section.marksPerQuestion} marks`
         );
       }
     }
