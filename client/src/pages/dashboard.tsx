@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { PlusCircle, Clock, FileText, BookOpen, Star } from "lucide-react";
+import { PlusCircle, Clock, FileText, BookOpen, Star, FilePlus } from "lucide-react";
 import type { Attempt, Exam } from "@shared/schema";
 
 type AttemptWithExam = Attempt & { exam: Exam };
@@ -22,12 +22,20 @@ export default function Dashboard() {
     <div className="container mx-auto py-8">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">Your Exams</h1>
-        <Link href="/create">
-          <Button>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Create New Exam
-          </Button>
-        </Link>
+        <div className="flex gap-4">
+          <Link href="/add-template">
+            <Button variant="outline">
+              <FilePlus className="mr-2 h-4 w-4" />
+              Add Template
+            </Button>
+          </Link>
+          <Link href="/create">
+            <Button>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Create New Exam
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {exams && exams.length > 0 && (
@@ -100,7 +108,11 @@ export default function Dashboard() {
                     {attempt.feedback && (
                       <div className="mt-2 text-sm">
                         <p className="font-medium">Feedback:</p>
-                        <p className="text-gray-600">{attempt.feedback.overall}</p>
+                        <p className="text-gray-600">
+                          {typeof attempt.feedback === 'object' && 'overall' in attempt.feedback
+                            ? attempt.feedback.overall
+                            : 'No detailed feedback available'}
+                        </p>
                       </div>
                     )}
                   </div>
