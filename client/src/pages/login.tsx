@@ -14,23 +14,32 @@ export default function Login() {
   useEffect(() => {
     console.log("Setting up auth state listener");
     const unsubscribe = auth.onAuthStateChanged((user) => {
-      console.log("Auth state changed:", user ? "User logged in" : "No user");
+      console.log("Auth state changed:", user ? `User logged in: ${user.email}` : "No user");
       if (user) {
+        console.log("Redirecting to dashboard...");
         setLocation("/dashboard");
       }
     });
-    return () => unsubscribe();
+    return () => {
+      console.log("Cleaning up auth state listener");
+      unsubscribe();
+    };
   }, [setLocation]);
 
   const handleLogin = async () => {
+    console.log("Login button clicked");
     setIsLoading(true);
     try {
+      console.log("Starting Google sign-in process");
       await loginWithGoogle();
-    } catch (error) {
+      console.log("Google sign-in redirect successful");
+    } catch (error: any) {
       console.error("Login error:", error);
+      console.error("Error code:", error.code);
+      console.error("Error message:", error.message);
       toast({
         title: "Login Failed",
-        description: "Could not sign in with Google. Please try again.",
+        description: error.message || "Could not sign in with Google. Please try again.",
         variant: "destructive",
       });
     } finally {
