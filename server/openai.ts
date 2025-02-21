@@ -179,18 +179,14 @@ export async function evaluateAnswers(imageBase64: string, questions: any) {
   try {
     // First, analyze the image to extract text and context
     const visionResponse = await openai.chat.completions.create({
-      model: "gpt-4-vision-preview",  // Using vision model for image analysis
+      model: "gpt-4", // Using latest GPT-4 model
       messages: [
         {
           role: "user",
           content: [
             {
               type: "text",
-              text: "Please analyze this exam answer sheet carefully. For each answer, identify:\n" +
-                    "1. The key concepts covered\n" +
-                    "2. The accuracy and completeness of the response\n" +
-                    "3. The clarity and organization of the answer\n" +
-                    "4. Any misconceptions or areas for improvement"
+              text: "Analyze this exam answer sheet and evaluate each answer based on the given questions. Focus on the correctness, completeness, and clarity of the responses."
             },
             {
               type: "image_url",
@@ -201,27 +197,33 @@ export async function evaluateAnswers(imageBase64: string, questions: any) {
           ],
         },
       ],
-      max_tokens: 1500,
+      max_tokens: 1000,
     });
 
-    const extractedText = visionResponse.choices[0].message.content || "";
-    console.log("Detailed analysis from image:", extractedText);
+    if (!visionResponse.choices[0].message.content) {
+      throw new Error("No content received from vision analysis");
+    }
 
-    // Enhanced evaluation with detailed rubric
+    const analysis = visionResponse.choices[0].message.content;
+    console.log("Vision analysis completed:", analysis);
+
+    // Now evaluate the answers based on the analysis
     const evaluationPrompt = `
-    Perform a comprehensive evaluation of these exam answers:
-    Questions: ${JSON.stringify(questions)}
-    Answers: ${extractedText}
+    Based on this analysis of the exam answers:
+    ${analysis}
 
-    Provide a detailed evaluation in this EXACT JSON format:
+    And these exam questions:
+    ${JSON.stringify(questions)}
+
+    Provide a comprehensive evaluation in this EXACT JSON format:
     {
       "score": 85,
       "feedback": {
         "overall": {
-          "summary": "Good understanding of core concepts with some areas for improvement",
-          "strengths": ["Clear explanation of key concepts", "Well-structured responses"],
-          "areas_for_improvement": ["More detailed examples needed", "Better mathematical notation"],
-          "learning_recommendations": ["Review chapter 5", "Practice problem-solving"]
+          "summary": "Brief overall assessment",
+          "strengths": ["strength 1", "strength 2"],
+          "areas_for_improvement": ["area 1", "area 2"],
+          "learning_recommendations": ["recommendation 1", "recommendation 2"]
         },
         "perQuestion": [
           {
@@ -229,23 +231,23 @@ export async function evaluateAnswers(imageBase64: string, questions: any) {
             "score": 90,
             "conceptualUnderstanding": {
               "level": "Excellent",
-              "details": "Shows deep understanding of the concept"
+              "details": "Explanation"
             },
             "technicalAccuracy": {
               "score": 85,
-              "details": "Minor calculation errors"
+              "details": "Details"
             },
-            "keyConceptsCovered": ["Integration", "Derivatives"],
-            "misconceptions": ["None identified"],
-            "improvementAreas": ["Show more steps"],
-            "exemplarAnswer": "A complete solution would include..."
+            "keyConceptsCovered": ["concept 1", "concept 2"],
+            "misconceptions": ["misconception 1"],
+            "improvementAreas": ["improvement 1"],
+            "exemplarAnswer": "Brief example"
           }
         ],
         "performanceAnalytics": {
-          "conceptualStrengths": ["Mathematical reasoning", "Problem analysis"],
-          "technicalStrengths": ["Calculation accuracy", "Formula application"],
-          "learningPatterns": ["Strong in theory", "Needs practice in application"],
-          "recommendedTopics": ["Complex numbers", "Vector calculus"],
+          "conceptualStrengths": ["strength 1"],
+          "technicalStrengths": ["strength 1"],
+          "learningPatterns": ["pattern 1"],
+          "recommendedTopics": ["topic 1"],
           "difficultyAnalysis": {
             "easy": 95,
             "medium": 85,
@@ -256,23 +258,61 @@ export async function evaluateAnswers(imageBase64: string, questions: any) {
     }`;
 
     const evaluationResponse = await openai.chat.completions.create({
-      model: "gpt-4",  // Using standard GPT-4 for evaluation
-      messages: [{ role: "user", content: evaluationPrompt }],
+      model: "gpt-4",
+      messages: [
+        { 
+          role: "system", 
+          content: "You are an expert exam evaluator. Provide detailed feedback in the exact JSON format specified." 
+        },
+        { 
+          role: "user", 
+          content: evaluationPrompt 
+        }
+      ],
       temperature: 0.3,
       max_tokens: 2000,
       response_format: { type: "json_object" }
     });
 
     if (!evaluationResponse.choices[0].message.content) {
-      throw new Error("No evaluation content received from OpenAI");
+      throw new Error("No evaluation content received");
     }
 
-    const parsedResponse = JSON.parse(evaluationResponse.choices[0].message.content);
-    console.log("Advanced evaluation completed:", parsedResponse);
-    return parsedResponse;
+    try {
+      const parsedResponse = JSON.parse(evaluationResponse.choices[0].message.content);
+      console.log("Evaluation completed successfully");
+      return parsedResponse;
+    } catch (parseError) {
+      console.error("Failed to parse evaluation response:", parseError);
+      throw new Error("Invalid evaluation response format");
+    }
   } catch (error: any) {
-    console.error("Error in advanced evaluation:", error);
-    throw new Error(`Failed to evaluate answers: ${error.message}`);
+    console.error("Error in evaluation:", error);
+
+    // Provide a basic evaluation if the advanced one fails
+    return {
+      score: 0,
+      feedback: {
+        overall: {
+          summary: "Unable to complete evaluation",
+          strengths: [],
+          areas_for_improvement: ["Please try uploading the answers again"],
+          learning_recommendations: []
+        },
+        perQuestion: [],
+        performanceAnalytics: {
+          conceptualStrengths: [],
+          technicalStrengths: [],
+          learningPatterns: [],
+          recommendedTopics: [],
+          difficultyAnalysis: {
+            easy: 0,
+            medium: 0,
+            hard: 0
+          }
+        }
+      }
+    };
   }
 }
 
