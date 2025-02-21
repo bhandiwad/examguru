@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { insertExamSchema } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { PageHeader } from "@/components/ui/page-header";
 import type { QuestionTemplate } from "@shared/schema";
 
 const CURRICULA = ["ICSE", "CBSE", "Karnataka State Board"];
@@ -129,13 +130,8 @@ export default function CreateExam() {
 
   return (
     <div className="container mx-auto py-8 max-w-2xl">
+      <PageHeader title="Create New Exam" />
       <Card>
-        <CardHeader>
-          <CardTitle>Create New Exam</CardTitle>
-          <CardDescription>
-            Fill in the details below to generate an exam. You can optionally select a specific institution's format.
-          </CardDescription>
-        </CardHeader>
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
