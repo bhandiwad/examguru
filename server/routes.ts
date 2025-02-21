@@ -35,20 +35,15 @@ export async function registerRoutes(app: Express) {
         validation.data.format
       );
 
-      // Extract all questions from sections and flatten them into a single array
-      const allQuestions = generatedContent.sections.flatMap(section => 
-        section.questions.map(q => ({
-          ...q,
-          type: section.type,
-          marks: q.marks || Math.floor(section.marks / section.questions.length)
-        }))
-      );
+      if (!generatedContent.questions || !Array.isArray(generatedContent.questions)) {
+        throw new Error("Invalid response from question generator");
+      }
 
       console.log("Creating exam in storage");
       const exam = await storage.createExam({
         ...validation.data,
         userId,
-        questions: allQuestions
+        questions: generatedContent.questions
       });
 
       console.log("Exam created successfully:", exam);
