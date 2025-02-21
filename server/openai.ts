@@ -9,7 +9,8 @@ export async function generateQuestions(
   difficulty: string,
   format: any,
   templates: any[],
-  selectedTemplate?: any
+  selectedTemplate?: any,
+  chapters?: string[] 
 ) {
   console.log("Generating questions with params:", {
     subject,
@@ -18,12 +19,14 @@ export async function generateQuestions(
     difficulty,
     format,
     templateCount: templates.length,
-    customTemplate: selectedTemplate ? "yes" : "no"
+    customTemplate: selectedTemplate ? "yes" : "no",
+    chapters
   });
 
   let promptContent = `Generate an exam paper for ${subject} (${grade} grade) following ${curriculum} curriculum.
   Difficulty level: ${difficulty}
   Format: ${JSON.stringify(format)}
+  ${chapters ? `Focus on these chapters/topics: ${chapters.join(", ")}` : ""}
 
   STRICT REQUIREMENTS:
   1. You MUST follow the exact section structure and question count from the template
@@ -35,7 +38,11 @@ export async function generateQuestions(
      - Only include simple, 2D diagrams for physics concepts (e.g., force diagrams, ray diagrams)
      - Keep diagrams black and white, minimal design
      - Focus on clarity and educational value
-  5. The total marks must exactly match the template specification`;
+  5. Each question must include:
+     - The specific chapter/topic it relates to
+     - The key concepts being tested
+     - Recommended study resources for this topic
+  6. The total marks must exactly match the template specification`;
 
   if (selectedTemplate) {
     const sections = selectedTemplate.formatMetadata.sections;
@@ -50,17 +57,17 @@ export async function generateQuestions(
     promptContent += `\n\nUSE THIS EXACT TEMPLATE FORMAT:
     Institution: ${selectedTemplate.institution}
     Paper Format: ${selectedTemplate.paperFormat}
-
+    
     SECTION REQUIREMENTS:
     ${sectionRequirements}
-
+    
     Format Details: ${JSON.stringify(selectedTemplate.formatMetadata, null, 2)}
     Sample Structure: ${JSON.stringify(selectedTemplate.template, null, 2)}`;
   }
 
   promptContent += `\n\nUse these curriculum-specific templates as guidelines:
   ${JSON.stringify(templates, null, 2)}
-
+  
   Provide the questions in this EXACT JSON format:
   {
     "questions": [
@@ -77,6 +84,10 @@ export async function generateQuestions(
         "correctAnswer": "A|B|C|D",
         "rubric": "string",
         "section": "string",
+        "chapter": "string",
+        "topic": "string",
+        "keyConcepts": ["string"],
+        "studyResources": ["string"],
         "imageDescription": "string (optional)"
       },
       {
@@ -86,6 +97,10 @@ export async function generateQuestions(
         "expectedAnswer": "string",
         "rubric": "string",
         "section": "string",
+        "chapter": "string",
+        "topic": "string",
+        "keyConcepts": ["string"],
+        "studyResources": ["string"],
         "imageDescription": "string (optional)"
       }
     ]
@@ -145,6 +160,13 @@ export async function generateQuestions(
       }
     }
 
+    // Add validation for new fields
+    for (const question of parsedResponse.questions) {
+      if (!question.chapter || !question.topic || !question.keyConcepts || !question.studyResources) {
+        throw new Error("Questions must include chapter, topic, key concepts, and study resources");
+      }
+    }
+
     // Generate images for questions that need them
     for (const question of parsedResponse.questions) {
       if (question.imageDescription) {
@@ -187,6 +209,11 @@ export async function evaluateAnswers(imageBase64: string, questions: any) {
     3. Problem-solving approach
     4. Technical accuracy
 
+    For incorrect answers, provide:
+    1. Specific study resources
+    2. Common misconceptions
+    3. Practice recommendations
+
     Provide a detailed evaluation in this EXACT JSON format:
     {
       "score": number (0-100),
@@ -197,7 +224,36 @@ export async function evaluateAnswers(imageBase64: string, questions: any) {
           "areas_for_improvement": ["area1", "area2"],
           "learning_recommendations": ["recommendation1", "recommendation2"]
         },
+        "questions": [
+          {
+            "questionNumber": number,
+            "isCorrect": boolean,
+            "score": number,
+            "chapter": "string",
+            "topic": "string",
+            "conceptualUnderstanding": {
+              "level": "string",
+              "details": "string"
+            },
+            "misconceptions": ["string"],
+            "studyResources": [
+              {
+                "type": "video|article|practice",
+                "title": "string",
+                "description": "string",
+                "link": "string (optional)"
+              }
+            ]
+          }
+        ],
         "performanceAnalytics": {
+          "byChapter": {
+            "chapterName": {
+              "score": number,
+              "topics": ["string"],
+              "recommendations": ["string"]
+            }
+          },
           "difficultyAnalysis": {
             "easy": number (0-100),
             "medium": number (0-100),
@@ -220,8 +276,7 @@ export async function evaluateAnswers(imageBase64: string, questions: any) {
         }
       ],
       temperature: 0.3,
-      max_tokens: 2000,
-      response_format: { type: "json_object" }
+      max_tokens: 2000
     });
 
     if (!evaluationResponse.choices[0].message.content) {
@@ -239,6 +294,7 @@ export async function evaluateAnswers(imageBase64: string, questions: any) {
   } catch (error: any) {
     console.error("Error in evaluation:", error);
 
+    // Provide a basic fallback evaluation
     const totalMarks = questions.reduce((sum: number, q: any) => sum + q.marks, 0);
     const estimatedScore = Math.floor(Math.random() * 30) + 40; 
 
@@ -251,7 +307,27 @@ export async function evaluateAnswers(imageBase64: string, questions: any) {
           areas_for_improvement: ["Consider providing more detailed answers"],
           learning_recommendations: ["Review course materials", "Practice similar questions"]
         },
+        questions: questions.map((q: any, index: number) => ({
+          questionNumber: index + 1,
+          isCorrect: false,
+          score: 0,
+          chapter: q.chapter || "Unknown",
+          topic: q.topic || "Unknown",
+          conceptualUnderstanding: {
+            level: "Needs Review",
+            details: "Unable to evaluate answer"
+          },
+          misconceptions: ["Unable to analyze specific misconceptions"],
+          studyResources: [
+            {
+              type: "article",
+              title: "General Study Guide",
+              description: "Review the chapter materials and practice similar problems"
+            }
+          ]
+        })),
         performanceAnalytics: {
+          byChapter: {},
           difficultyAnalysis: {
             easy: estimatedScore + 10,
             medium: estimatedScore,
@@ -280,7 +356,7 @@ export async function analyzeQuestionPaperTemplate(imageBase64: string) {
               3. Question types (MCQ, Theory, Numerical)
               4. Marks distribution
               5. Any special instructions or format rules
-
+              
               Provide the analysis in this exact JSON format:
               {
                 "sections": [

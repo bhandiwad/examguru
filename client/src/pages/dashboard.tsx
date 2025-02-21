@@ -34,6 +34,62 @@ function formatDateTime(date: string | Date) {
   });
 }
 
+function QuestionFeedback({ feedback }: { feedback: any }) {
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <div className={`w-2 h-2 rounded-full ${feedback.isCorrect ? 'bg-green-500' : 'bg-red-500'}`} />
+        <span className="font-medium">
+          Question {feedback.questionNumber}
+          {feedback.isCorrect ? ' (Correct)' : ' (Incorrect)'}
+        </span>
+      </div>
+
+      <div className="ml-4 space-y-2">
+        <p><strong>Chapter:</strong> {feedback.chapter}</p>
+        <p><strong>Topic:</strong> {feedback.topic}</p>
+        <p><strong>Understanding Level:</strong> {feedback.conceptualUnderstanding.level}</p>
+        <p>{feedback.conceptualUnderstanding.details}</p>
+
+        {feedback.misconceptions && feedback.misconceptions.length > 0 && (
+          <div>
+            <strong>Common Misconceptions:</strong>
+            <ul className="list-disc pl-4">
+              {feedback.misconceptions.map((m: string, i: number) => (
+                <li key={i}>{m}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {feedback.studyResources && feedback.studyResources.length > 0 && (
+          <div>
+            <strong>Study Resources:</strong>
+            <ul className="list-none space-y-2 mt-2">
+              {feedback.studyResources.map((resource: any, i: number) => (
+                <li key={i} className="p-2 bg-secondary/10 rounded">
+                  <div className="font-medium">{resource.title}</div>
+                  <div className="text-sm text-muted-foreground">{resource.description}</div>
+                  {resource.link && (
+                    <a
+                      href={resource.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-primary hover:underline"
+                    >
+                      View Resource →
+                    </a>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const { data: attempts, isLoading: attemptsLoading } = useQuery<AttemptWithExam[]>({
     queryKey: ["/api/attempts"]
@@ -170,7 +226,7 @@ export default function Dashboard() {
                           </AccordionTrigger>
                           <AccordionContent>
                             {attempt.feedback && (
-                              <div className="space-y-4 text-sm">
+                              <div className="space-y-6 text-sm">
                                 {(attempt.feedback as EvaluationFeedback).overall && (
                                   <>
                                     <div>
@@ -239,6 +295,44 @@ export default function Dashboard() {
                                       </div>
                                     )}
                                   </>
+                                )}
+                                {attempt.feedback.questions && (
+                                  <div className="mt-6">
+                                    <h4 className="font-medium mb-4">Question-by-Question Analysis</h4>
+                                    <div className="space-y-6">
+                                      {attempt.feedback.questions.map((questionFeedback: any) => (
+                                        <QuestionFeedback
+                                          key={questionFeedback.questionNumber}
+                                          feedback={questionFeedback}
+                                        />
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {attempt.feedback.performanceAnalytics?.byChapter && (
+                                  <div className="mt-6">
+                                    <h4 className="font-medium mb-4">Chapter-wise Performance</h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                      {Object.entries(attempt.feedback.performanceAnalytics.byChapter).map(([chapter, data]: [string, any]) => (
+                                        <Card key={chapter} className="p-4">
+                                          <h5 className="font-medium mb-2">{chapter}</h5>
+                                          <Progress value={data.score} className="mb-2" />
+                                          <p className="text-sm text-muted-foreground mb-2">Score: {data.score}%</p>
+                                          {data.recommendations && (
+                                            <div className="text-sm">
+                                              <strong>Recommendations:</strong>
+                                              <ul className="list-disc pl-4 mt-1">
+                                                {data.recommendations.map((rec: string, i: number) => (
+                                                  <li key={i}>{rec}</li>
+                                                ))}
+                                              </ul>
+                                            </div>
+                                          )}
+                                        </Card>
+                                      ))}
+                                    </div>
+                                  </div>
                                 )}
                               </div>
                             )}

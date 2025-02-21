@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -13,16 +13,39 @@ import { insertExamSchema } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { PageHeader } from "@/components/ui/page-header";
 import type { QuestionTemplate } from "@shared/schema";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+
 
 const CURRICULA = ["ICSE", "CBSE", "Karnataka State Board"];
 const DIFFICULTIES = ["Easy", "Medium", "Hard"];
 const GRADES = ["8", "9", "10", "11", "12"];
 
-const defaultFormat = {
-  totalMarks: 100,
-  sections: [
-    { type: "theory", marks: 60 },
-    { type: "problems", marks: 40 }
+// Example chapters by subject (you can expand this)
+const SUBJECT_CHAPTERS = {
+  "Mathematics": [
+    "Algebra",
+    "Geometry",
+    "Trigonometry",
+    "Calculus",
+    "Statistics",
+    "Probability"
+  ],
+  "Physics": [
+    "Mechanics",
+    "Optics",
+    "Thermodynamics",
+    "Electricity",
+    "Magnetism",
+    "Modern Physics"
+  ],
+  "Chemistry": [
+    "Organic Chemistry",
+    "Inorganic Chemistry",
+    "Physical Chemistry",
+    "Atomic Structure",
+    "Chemical Bonding",
+    "Electrochemistry"
   ]
 };
 
@@ -33,6 +56,15 @@ type FormData = {
   difficulty: string;
   format: typeof defaultFormat;
   templateId?: number;
+  chapters: string[]; // New field for chapters
+};
+
+const defaultFormat = {
+  totalMarks: 100,
+  sections: [
+    { type: "theory", marks: 60 },
+    { type: "problems", marks: 40 }
+  ]
 };
 
 export default function CreateExam() {
@@ -40,17 +72,26 @@ export default function CreateExam() {
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
   const [selectedInstitution, setSelectedInstitution] = useState<string>("");
+  const [availableChapters, setAvailableChapters] = useState<string[]>([]);
 
   const form = useForm<FormData>({
     resolver: zodResolver(insertExamSchema),
     defaultValues: {
       curriculum: CURRICULA[0],
       subject: "",
-      grade: GRADES[2], // Default to grade 10
+      grade: GRADES[2],
       difficulty: DIFFICULTIES[0],
-      format: defaultFormat
+      format: defaultFormat,
+      chapters: []
     }
   });
+
+  // Watch subject changes to update available chapters
+  useEffect(() => {
+    const subject = form.watch("subject");
+    const chapters = SUBJECT_CHAPTERS[subject as keyof typeof SUBJECT_CHAPTERS] || [];
+    setAvailableChapters(chapters);
+  }, [form.watch("subject")]);
 
   const { data: templates, isLoading: templatesLoading } = useQuery<QuestionTemplate[]>({
     queryKey: ["/api/templates/search", form.watch("curriculum"), form.watch("subject"), form.watch("grade")],
@@ -250,6 +291,34 @@ export default function CreateExam() {
                         ))}
                       </SelectContent>
                     </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="chapters"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Chapters to Include</FormLabel>
+                    <div className="grid grid-cols-2 gap-4">
+                      {availableChapters.map((chapter) => (
+                        <div key={chapter} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={chapter}
+                            checked={field.value?.includes(chapter)}
+                            onCheckedChange={(checked) => {
+                              const newValue = checked
+                                ? [...(field.value || []), chapter]
+                                : (field.value || []).filter((c) => c !== chapter);
+                              field.onChange(newValue);
+                            }}
+                          />
+                          <Label htmlFor={chapter}>{chapter}</Label>
+                        </div>
+                      ))}
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
