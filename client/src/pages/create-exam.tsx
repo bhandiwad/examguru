@@ -71,17 +71,36 @@ export default function CreateExam() {
     }
   });
 
-  const onSubmit = async (data: any) => {
-    console.log("Form submitted with values:", data);
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    console.log("Form submission started");
+
+    const formData = form.getValues();
+    console.log("Form values:", formData);
+
+    if (!formData.subject) {
+      toast({
+        title: "Error",
+        description: "Please enter a subject",
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
       setIsGenerating(true);
-      await createExam.mutateAsync(data);
+      toast({
+        title: "Generating",
+        description: "Creating your exam...",
+      });
+
+      await createExam.mutateAsync(formData);
     } catch (error) {
       console.error("Form submission error:", error);
     } finally {
       setIsGenerating(false);
     }
-  };
+  }
 
   return (
     <div className="container mx-auto py-8 max-w-2xl">
@@ -91,7 +110,7 @@ export default function CreateExam() {
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
               <FormField
                 control={form.control}
                 name="curriculum"
@@ -154,7 +173,7 @@ export default function CreateExam() {
 
               <Button 
                 type="submit" 
-                className="w-full" 
+                className="w-full"
                 disabled={isGenerating}
               >
                 {isGenerating ? "Generating exam..." : "Generate Exam"}
