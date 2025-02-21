@@ -32,14 +32,20 @@ export default function Login() {
     try {
       console.log("Starting Google sign-in process");
       await loginWithGoogle();
-      console.log("Google sign-in redirect successful");
+      console.log("Google sign-in successful");
     } catch (error: any) {
       console.error("Login error:", error);
-      console.error("Error code:", error.code);
-      console.error("Error message:", error.message);
+      let errorMessage = "Could not sign in with Google. Please try again.";
+
+      if (error.code === 'auth/popup-blocked') {
+        errorMessage = "Please allow popups for this website to sign in with Google.";
+      } else if (error.code === 'auth/unauthorized-domain') {
+        errorMessage = "This domain is not authorized. Please ensure you've added it to Firebase console.";
+      }
+
       toast({
         title: "Login Failed",
-        description: error.message || "Could not sign in with Google. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {

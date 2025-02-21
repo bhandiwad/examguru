@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, signInWithRedirect, GoogleAuthProvider } from "firebase/auth";
+import { getAuth, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -20,11 +20,14 @@ const provider = new GoogleAuthProvider();
 
 export const loginWithGoogle = async () => {
   try {
-    console.log("Initiating Google sign-in...");
-    await signInWithRedirect(auth, provider);
-    console.log("Sign-in redirect initiated");
-  } catch (error) {
+    console.log("Initiating Google sign-in with popup...");
+    const result = await signInWithPopup(auth, provider);
+    console.log("Sign-in successful:", result.user.email);
+    return result;
+  } catch (error: any) {
     console.error("Google sign-in error:", error);
+    console.error("Error code:", error.code);
+    console.error("Error message:", error.message);
     throw error;
   }
 };
