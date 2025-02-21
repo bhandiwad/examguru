@@ -60,7 +60,7 @@ export default function CreateExam() {
     onSuccess: (data) => {
       console.log("Exam created successfully:", data);
       // Invalidate the queries so the dashboard will refetch fresh data
-      queryClient.invalidateQueries({ queryKey: ["/api/exams/current"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/exams"] });
       queryClient.invalidateQueries({ queryKey: ["/api/attempts"] });
 
       toast({
@@ -165,8 +165,8 @@ export default function CreateExam() {
                 )}
               />
 
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 className="w-full"
                 disabled={isGenerating}
               >

@@ -53,6 +53,21 @@ export async function registerRoutes(app: Express) {
     }
   });
 
+  app.get("/api/exams", async (req, res) => {
+    try {
+      // TODO: Add proper authentication middleware
+      const userId = 1; // Temporary for testing
+      const exams = await storage.getUserExams(userId);
+      res.json(exams);
+    } catch (error: any) {
+      console.error("Error fetching exams:", error);
+      res.status(500).json({
+        message: "Failed to fetch exams",
+        error: error.message
+      });
+    }
+  });
+
   app.get("/api/exams/current", async (req, res) => {
     try {
       // TODO: Add proper authentication middleware

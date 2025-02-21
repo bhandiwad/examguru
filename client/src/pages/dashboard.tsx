@@ -10,11 +10,11 @@ export default function Dashboard() {
     queryKey: ["/api/attempts"]
   });
 
-  const { data: currentExam, isLoading: examLoading } = useQuery<Exam>({
-    queryKey: ["/api/exams/current"]
+  const { data: exams, isLoading: examsLoading } = useQuery<Exam[]>({
+    queryKey: ["/api/exams"]
   });
 
-  const isLoading = attemptsLoading || examLoading;
+  const isLoading = attemptsLoading || examsLoading;
 
   return (
     <div className="container mx-auto py-8">
@@ -28,35 +28,39 @@ export default function Dashboard() {
         </Link>
       </div>
 
-      {currentExam && (
+      {exams && exams.length > 0 && (
         <div className="mb-8">
-          <h2 className="text-xl font-semibold mb-4">Current Exam</h2>
-          <Card className="bg-primary/5">
-            <CardHeader>
-              <CardTitle>{currentExam.subject}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm">
-                  <BookOpen className="h-4 w-4" />
-                  <span>Curriculum: {currentExam.curriculum}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <FileText className="h-4 w-4" />
-                  <span>Difficulty: {currentExam.difficulty}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <Clock className="h-4 w-4" />
-                  <span>Created: {new Date(currentExam.createdAt).toLocaleDateString()}</span>
-                </div>
-                <Link href="/take">
-                  <Button className="w-full mt-4">
-                    Take Exam
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
+          <h2 className="text-xl font-semibold mb-4">Your Exams</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {exams.map((exam) => (
+              <Card key={exam.id} className="bg-primary/5">
+                <CardHeader>
+                  <CardTitle>{exam.subject}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm">
+                      <BookOpen className="h-4 w-4" />
+                      <span>Curriculum: {exam.curriculum}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <FileText className="h-4 w-4" />
+                      <span>Difficulty: {exam.difficulty}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Clock className="h-4 w-4" />
+                      <span>Created: {new Date(exam.createdAt).toLocaleDateString()}</span>
+                    </div>
+                    <Link href="/take">
+                      <Button className="w-full mt-4">
+                        Take Exam
+                      </Button>
+                    </Link>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
       )}
 
