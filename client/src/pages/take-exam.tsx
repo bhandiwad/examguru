@@ -113,8 +113,8 @@ export default function TakeExam() {
 
     // If exam has theory questions, capture the page content
     if (hasTheoryQuestions(questions)) {
-      const examContent = document.querySelector(".prose");
-      if (!examContent) {
+      const answersContent = document.querySelector(".prose");
+      if (!answersContent) {
         toast({
           title: "Error",
           description: "Could not capture exam content",
@@ -124,12 +124,23 @@ export default function TakeExam() {
       }
 
       try {
-        const canvas = await html2canvas(examContent as HTMLElement, {
+        // Create a div to hold only the answers without the question paper
+        const answerDiv = document.createElement('div');
+        answerDiv.className = 'answers-only';
+        const answers = answersContent.querySelectorAll('.answer-input');
+        answers.forEach(answer => {
+          answerDiv.appendChild(answer.cloneNode(true));
+        });
+        document.body.appendChild(answerDiv);
+
+        const canvas = await html2canvas(answerDiv, {
           scale: 2,
           useCORS: true,
           logging: true,
           backgroundColor: "#ffffff"
         });
+
+        document.body.removeChild(answerDiv);
 
         canvas.toBlob(async (blob) => {
           if (!blob) {
@@ -145,6 +156,7 @@ export default function TakeExam() {
           submitMutation.mutate(formData);
         }, 'image/png', 1.0);
       } catch (error) {
+        console.error('Error capturing answers:', error);
         toast({
           title: "Error",
           description: "Failed to capture exam content",
@@ -248,11 +260,13 @@ export default function TakeExam() {
               )}
 
               {question.type !== "MCQ" && (
-                <div className="mt-4 p-4 bg-muted/50 rounded-lg">
-                  <p className="text-sm text-muted-foreground">
-                    This is a {question.type} question. Write your answer in the space below.
-                    Your answer will be captured when you click "Finish Exam & Upload Answers".
-                  </p>
+                <div className="mt-4">
+                  <Label htmlFor={`q${index}-answer`}>Your Answer:</Label>
+                  <textarea
+                    id={`q${index}-answer`}
+                    className="answer-input w-full min-h-[200px] p-4 mt-2 border rounded-lg"
+                    placeholder="Write your answer here..."
+                  />
                 </div>
               )}
             </div>

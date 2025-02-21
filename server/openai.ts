@@ -179,7 +179,7 @@ export async function evaluateAnswers(imageBase64: string, questions: any) {
   try {
     // First, analyze the image to extract text and context
     const visionResponse = await openai.chat.completions.create({
-      model: "gpt-4", // Using latest GPT-4 model
+      model: "gpt-4-vision-preview", // Using GPT-4 Vision model
       messages: [
         {
           role: "user",
