@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { PlusCircle, FilePlus } from "lucide-react";
 import type { Attempt, Exam, EvaluationFeedback } from "@shared/schema";
+import { PerformanceTrends } from "@/components/PerformanceTrends";
 import {
   Accordion,
   AccordionContent,
@@ -51,6 +52,13 @@ export default function Dashboard() {
           </Link>
         </div>
       </div>
+
+      {attempts && attempts.length > 0 && (
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold mb-4">Performance Analytics</h2>
+          <PerformanceTrends attempts={attempts} />
+        </div>
+      )}
 
       {exams && exams.length > 0 && (
         <div className="mb-8">
