@@ -3,7 +3,7 @@ import { createServer } from "http";
 import multer from "multer";
 import { storage } from "./storage";
 import { generateQuestions, evaluateAnswers } from "./openai";
-import { insertExamSchema, insertAttemptSchema } from "@shared/schema";
+import { insertExamSchema, insertAttemptSchema, insertQuestionTemplateSchema } from "@shared/schema";
 
 // Configure multer for handling file uploads
 const upload = multer({
@@ -12,6 +12,51 @@ const upload = multer({
 });
 
 export async function registerRoutes(app: Express) {
+  // Template management routes
+  app.post("/api/templates", async (req, res) => {
+    try {
+      const validation = insertQuestionTemplateSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({
+          message: "Invalid template data",
+          errors: validation.error.errors
+        });
+      }
+
+      const template = await storage.createTemplate(validation.data);
+      res.json(template);
+    } catch (error: any) {
+      console.error("Error creating template:", error);
+      res.status(500).json({
+        message: "Failed to create template",
+        error: error.message
+      });
+    }
+  });
+
+  app.get("/api/templates", async (req, res) => {
+    try {
+      const { curriculum, subject, grade } = req.query;
+      if (!curriculum || !subject || !grade) {
+        return res.status(400).json({ message: "Missing required query parameters" });
+      }
+
+      const templates = await storage.getTemplates(
+        curriculum as string,
+        subject as string,
+        grade as string
+      );
+      res.json(templates);
+    } catch (error: any) {
+      console.error("Error fetching templates:", error);
+      res.status(500).json({
+        message: "Failed to fetch templates",
+        error: error.message
+      });
+    }
+  });
+
+  // Modified exam creation to use templates
   app.post("/api/exams", async (req, res) => {
     try {
       console.log("Received exam creation request:", req.body);
@@ -19,21 +64,32 @@ export async function registerRoutes(app: Express) {
       const validation = insertExamSchema.safeParse(req.body);
       if (!validation.success) {
         console.error("Validation failed:", validation.error.errors);
-        return res.status(400).json({ 
+        return res.status(400).json({
           message: "Invalid exam data",
-          errors: validation.error.errors 
+          errors: validation.error.errors
         });
       }
 
       // TODO: Add proper authentication middleware
       const userId = 1; // Temporary for testing
 
+      // Get relevant templates
+      const templates = await storage.getTemplates(
+        validation.data.curriculum,
+        validation.data.subject,
+        validation.data.grade
+      );
+
+      console.log("Found templates:", templates.length);
+
       console.log("Generating questions with validated data:", validation.data);
       const generatedContent = await generateQuestions(
         validation.data.subject,
         validation.data.curriculum,
+        validation.data.grade,
         validation.data.difficulty,
-        validation.data.format
+        validation.data.format,
+        templates
       );
 
       if (!generatedContent.questions || !Array.isArray(generatedContent.questions)) {
@@ -51,9 +107,9 @@ export async function registerRoutes(app: Express) {
       res.json(exam);
     } catch (error: any) {
       console.error("Error creating exam:", error);
-      res.status(500).json({ 
+      res.status(500).json({
         message: "Failed to create exam",
-        error: error.message 
+        error: error.message
       });
     }
   });
@@ -124,7 +180,6 @@ export async function registerRoutes(app: Express) {
         return res.status(400).json({ message: "Invalid exam ID or user ID" });
       }
 
-      // Get the exam to evaluate against
       const exam = await storage.getExam(examId);
       if (!exam) {
         return res.status(404).json({ message: "Exam not found" });
@@ -146,9 +201,9 @@ export async function registerRoutes(app: Express) {
       res.json(attempt);
     } catch (error: any) {
       console.error("Error uploading attempt:", error);
-      res.status(500).json({ 
+      res.status(500).json({
         message: "Failed to process attempt",
-        error: error.message 
+        error: error.message
       });
     }
   });

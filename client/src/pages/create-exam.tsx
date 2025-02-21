@@ -14,6 +14,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 
 const CURRICULA = ["ICSE", "CBSE", "Karnataka State Board"];
 const DIFFICULTIES = ["Easy", "Medium", "Hard"];
+const GRADES = ["8", "9", "10", "11", "12"];
 
 const defaultFormat = {
   totalMarks: 100,
@@ -26,6 +27,7 @@ const defaultFormat = {
 type FormData = {
   curriculum: string;
   subject: string;
+  grade: string;
   difficulty: string;
   format: typeof defaultFormat;
 };
@@ -40,6 +42,7 @@ export default function CreateExam() {
     defaultValues: {
       curriculum: CURRICULA[0],
       subject: "",
+      grade: GRADES[2], // Default to grade 10
       difficulty: DIFFICULTIES[0],
       format: defaultFormat
     }
@@ -59,7 +62,6 @@ export default function CreateExam() {
     },
     onSuccess: (data) => {
       console.log("Exam created successfully:", data);
-      // Invalidate the queries so the dashboard will refetch fresh data
       queryClient.invalidateQueries({ queryKey: ["/api/exams"] });
       queryClient.invalidateQueries({ queryKey: ["/api/attempts"] });
 
@@ -85,7 +87,7 @@ export default function CreateExam() {
       setIsGenerating(true);
       toast({
         title: "Generating",
-        description: "Creating your exam...",
+        description: "Creating your exam using curriculum-specific templates...",
       });
 
       await createExam.mutateAsync(formData);
@@ -137,6 +139,29 @@ export default function CreateExam() {
                     <FormControl>
                       <Input placeholder="e.g. Mathematics" {...field} />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="grade"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Grade</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select grade" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {GRADES.map((grade) => (
+                          <SelectItem key={grade} value={grade}>Grade {grade}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}

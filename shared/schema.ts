@@ -8,11 +8,22 @@ export const users = pgTable("users", {
   firebaseId: text("firebase_id").notNull().unique()
 });
 
+export const questionTemplates = pgTable("question_templates", {
+  id: serial("id").primaryKey(),
+  curriculum: text("curriculum").notNull(),
+  subject: text("subject").notNull(),
+  grade: text("grade").notNull(),
+  type: text("type").notNull(), 
+  template: jsonb("template").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow()
+});
+
 export const exams = pgTable("exams", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull(),
   curriculum: text("curriculum").notNull(),
   subject: text("subject").notNull(),
+  grade: text("grade").notNull(), 
   difficulty: text("difficulty").notNull(),
   format: jsonb("format").notNull(),
   questions: jsonb("questions").notNull(),
@@ -30,10 +41,23 @@ export const attempts = pgTable("attempts", {
   feedback: jsonb("feedback")
 });
 
-// Create Schema for exam creation - we'll omit userId and questions as they're handled by the server
+export const insertQuestionTemplateSchema = z.object({
+  curriculum: z.string().min(1, "Curriculum is required"),
+  subject: z.string().min(1, "Subject is required"),
+  grade: z.string().min(1, "Grade is required"),
+  type: z.string().min(1, "Question type is required"),
+  template: z.object({
+    structure: z.string(),
+    marks: z.number(),
+    rubric: z.string(),
+    examples: z.array(z.string())
+  })
+});
+
 export const insertExamSchema = z.object({
   curriculum: z.string().min(1, "Curriculum is required"),
   subject: z.string().min(1, "Subject is required"),
+  grade: z.string().min(1, "Grade is required"),
   difficulty: z.string().min(1, "Difficulty is required"),
   format: z.object({
     totalMarks: z.number(),
@@ -44,7 +68,6 @@ export const insertExamSchema = z.object({
   })
 });
 
-// Create Schema for attempt creation
 export const insertAttemptSchema = z.object({
   examId: z.number().int().min(1, "Exam ID is required"),
   userId: z.number().int().min(1, "User ID is required"),
@@ -58,6 +81,8 @@ export const insertAttemptSchema = z.object({
 export type User = typeof users.$inferSelect;
 export type Exam = typeof exams.$inferSelect;
 export type Attempt = typeof attempts.$inferSelect;
+export type QuestionTemplate = typeof questionTemplates.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 export type InsertExam = z.infer<typeof insertExamSchema>;
 export type InsertAttempt = z.infer<typeof insertAttemptSchema>;
+export type InsertQuestionTemplate = z.infer<typeof insertQuestionTemplateSchema>;

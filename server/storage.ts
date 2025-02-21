@@ -1,7 +1,7 @@
-import { users, exams, attempts } from "@shared/schema";
-import type { User, Exam, Attempt, InsertUser, InsertExam, InsertAttempt } from "@shared/schema";
+import { users, exams, attempts, questionTemplates } from "@shared/schema";
+import type { User, Exam, Attempt, QuestionTemplate, InsertUser, InsertExam, InsertAttempt, InsertQuestionTemplate } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 
 export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
@@ -11,6 +11,9 @@ export interface IStorage {
   getExam(examId: number): Promise<Exam | undefined>;
   getAttempts(userId: number): Promise<(Attempt & { exam: Exam })[]>;
   createAttempt(attempt: InsertAttempt): Promise<Attempt>;
+  // New template methods
+  createTemplate(template: InsertQuestionTemplate): Promise<QuestionTemplate>;
+  getTemplates(curriculum: string, subject: string, grade: string): Promise<QuestionTemplate[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -36,6 +39,7 @@ export class DatabaseStorage implements IStorage {
       .values({
         curriculum: insertExam.curriculum,
         subject: insertExam.subject,
+        grade: insertExam.grade,
         difficulty: insertExam.difficulty,
         userId: insertExam.userId,
         format: insertExam.format,
@@ -85,6 +89,32 @@ export class DatabaseStorage implements IStorage {
       .values(insertAttempt)
       .returning();
     return attempt;
+  }
+
+  // New template methods
+  async createTemplate(template: InsertQuestionTemplate): Promise<QuestionTemplate> {
+    const [newTemplate] = await db
+      .insert(questionTemplates)
+      .values({
+        ...template,
+        createdAt: new Date()
+      })
+      .returning();
+    return newTemplate;
+  }
+
+  async getTemplates(curriculum: string, subject: string, grade: string): Promise<QuestionTemplate[]> {
+    return db
+      .select()
+      .from(questionTemplates)
+      .where(
+        and(
+          eq(questionTemplates.curriculum, curriculum),
+          eq(questionTemplates.subject, subject),
+          eq(questionTemplates.grade, grade)
+        )
+      )
+      .orderBy(desc(questionTemplates.createdAt));
   }
 }
 

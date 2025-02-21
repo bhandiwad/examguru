@@ -3,12 +3,29 @@ import OpenAI from "openai";
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-export async function generateQuestions(subject: string, curriculum: string, difficulty: string, format: any) {
-  console.log("Generating questions with params:", { subject, curriculum, difficulty, format });
+export async function generateQuestions(
+  subject: string,
+  curriculum: string,
+  grade: string,
+  difficulty: string,
+  format: any,
+  templates: any[]
+) {
+  console.log("Generating questions with params:", {
+    subject,
+    curriculum,
+    grade,
+    difficulty,
+    format,
+    templateCount: templates.length
+  });
 
-  const prompt = `Generate an exam paper for ${subject} following ${curriculum} curriculum.
+  const prompt = `Generate an exam paper for ${subject} (${grade} grade) following ${curriculum} curriculum.
   Difficulty level: ${difficulty}
   Format: ${JSON.stringify(format)}
+
+  Use these curriculum-specific templates as guidelines:
+  ${JSON.stringify(templates, null, 2)}
 
   Please provide the questions in JSON format with the following structure:
   {
@@ -17,10 +34,17 @@ export async function generateQuestions(subject: string, curriculum: string, dif
         "type": "string",
         "text": "string",
         "marks": number,
-        "expectedAnswer": "string"
+        "expectedAnswer": "string",
+        "rubric": "string"
       }
     ]
-  }`;
+  }
+
+  Ensure that:
+  1. Questions follow the curriculum standards
+  2. Each question matches the template structure
+  3. Difficulty level is appropriate for the grade
+  4. Total marks match the format specification`;
 
   try {
     const response = await openai.chat.completions.create({
