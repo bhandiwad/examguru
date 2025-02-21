@@ -6,7 +6,7 @@ import { eq, desc } from "drizzle-orm";
 export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   getUser(id: number): Promise<User | undefined>;
-  createExam(exam: InsertExam): Promise<Exam>;
+  createExam(exam: InsertExam & { userId: number, questions: any[] }): Promise<Exam>;
   getUserExams(userId: number): Promise<Exam[]>;
   getAttempts(userId: number): Promise<Attempt[]>;
   createAttempt(attempt: InsertAttempt): Promise<Attempt>;
@@ -29,11 +29,16 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async createExam(insertExam: InsertExam): Promise<Exam> {
+  async createExam(insertExam: InsertExam & { userId: number, questions: any[] }): Promise<Exam> {
     const [exam] = await db
       .insert(exams)
       .values({
-        ...insertExam,
+        curriculum: insertExam.curriculum,
+        subject: insertExam.subject,
+        difficulty: insertExam.difficulty,
+        userId: insertExam.userId,
+        format: insertExam.format,
+        questions: insertExam.questions,
         createdAt: new Date()
       })
       .returning();

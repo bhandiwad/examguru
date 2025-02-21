@@ -28,18 +28,27 @@ export async function registerRoutes(app: Express) {
       const userId = 1; // Temporary for testing
 
       console.log("Generating questions with validated data:", validation.data);
-      const generatedQuestions = await generateQuestions(
+      const generatedContent = await generateQuestions(
         validation.data.subject,
         validation.data.curriculum,
         validation.data.difficulty,
         validation.data.format
       );
 
+      // Extract all questions from sections and flatten them into a single array
+      const allQuestions = generatedContent.sections.flatMap(section => 
+        section.questions.map(q => ({
+          ...q,
+          type: section.type,
+          marks: q.marks || Math.floor(section.marks / section.questions.length)
+        }))
+      );
+
       console.log("Creating exam in storage");
       const exam = await storage.createExam({
         ...validation.data,
         userId,
-        questions: generatedQuestions.questions
+        questions: allQuestions
       });
 
       console.log("Exam created successfully:", exam);
@@ -63,21 +72,6 @@ export async function registerRoutes(app: Express) {
       console.error("Error fetching exams:", error);
       res.status(500).json({
         message: "Failed to fetch exams",
-        error: error.message
-      });
-    }
-  });
-
-  app.get("/api/exams/current", async (req, res) => {
-    try {
-      // TODO: Add proper authentication middleware
-      const userId = 1; // Temporary for testing
-      const exam = await storage.getCurrentExam(userId);
-      res.json(exam);
-    } catch (error: any) {
-      console.error("Error fetching current exam:", error);
-      res.status(500).json({
-        message: "Failed to fetch current exam",
         error: error.message
       });
     }
