@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import type { Exam } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
+import html2canvas from 'html2canvas';
 
 type Question = {
   type: string;
@@ -42,12 +43,16 @@ export default function TakeExam() {
 
   const submitMutation = useMutation({
     mutationFn: async (formData: FormData) => {
-      const response = await apiRequest("POST", "/api/attempts/upload", formData, {
-        isFormData: true
+      const response = await fetch('/api/attempts/upload', {
+        method: 'POST',
+        body: formData
       });
+
       if (!response.ok) {
-        throw new Error("Failed to submit exam");
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to submit exam');
       }
+
       return response.json();
     },
     onSuccess: () => {
@@ -94,12 +99,7 @@ export default function TakeExam() {
 
     if (!exam) return;
 
-    const formData = new FormData();
-    formData.append("examId", exam.id.toString());
-    formData.append("userId", "1"); // TODO: Replace with actual user ID
-    formData.append("startTime", startTime.toISOString());
-
-    const examContent = document.querySelector(".prose")?.innerHTML;
+    const examContent = document.querySelector(".prose");
     if (!examContent) {
       toast({
         title: "Error",
@@ -109,23 +109,34 @@ export default function TakeExam() {
       return;
     }
 
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    const tempDiv = document.createElement("div");
-    tempDiv.innerHTML = examContent;
+    try {
+      const canvas = await html2canvas(examContent);
 
-    canvas.toBlob((blob) => {
-      if (!blob) {
-        toast({
-          title: "Error",
-          description: "Failed to capture answers",
-          variant: "destructive"
-        });
-        return;
-      }
-      formData.append("answer", blob, "answer.png");
-      submitMutation.mutate(formData);
-    });
+      canvas.toBlob(async (blob) => {
+        if (!blob) {
+          toast({
+            title: "Error",
+            description: "Failed to capture answers",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append("examId", exam.id.toString());
+        formData.append("userId", "1"); // TODO: Replace with actual user ID
+        formData.append("startTime", startTime.toISOString());
+        formData.append("answer", blob, "answer.png");
+
+        submitMutation.mutate(formData);
+      }, 'image/png');
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to capture exam content",
+        variant: "destructive"
+      });
+    }
   };
 
   if (isLoading) {
