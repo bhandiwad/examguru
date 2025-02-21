@@ -4,12 +4,16 @@ import multer from "multer";
 import { storage } from "./storage";
 import { generateQuestions, evaluateAnswers } from "./openai";
 import { insertExamSchema, insertAttemptSchema } from "@shared/schema";
+import vision from "@google-cloud/vision";
 
 // Configure multer for handling file uploads
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
 });
+
+// Initialize Vision API client
+const visionClient = new vision.ImageAnnotatorClient();
 
 export async function registerRoutes(app: Express) {
   app.post("/api/exams", async (req, res) => {
@@ -130,18 +134,31 @@ export async function registerRoutes(app: Express) {
         return res.status(404).json({ message: "Exam not found" });
       }
 
-      // Process image and evaluate answers
-      const imageBuffer = req.file.buffer;
-      const result = await evaluateAnswers(imageBuffer.toString('base64'), exam.questions);
+      // Extract text from image using Vision API
+      const [result] = await visionClient.textDetection({
+        image: {
+          content: req.file.buffer
+        }
+      });
+
+      const extractedText = result.fullTextAnnotation?.text || "";
+      if (!extractedText) {
+        throw new Error("Could not extract text from image");
+      }
+
+      console.log("Extracted text from image:", extractedText);
+
+      // Evaluate answers with the extracted text
+      const evaluation = await evaluateAnswers(extractedText, exam.questions);
 
       const attempt = await storage.createAttempt({
         examId,
         userId,
         startTime,
         endTime: new Date(),
-        answerImageUrl: "data:image/jpeg;base64," + imageBuffer.toString('base64'),
-        score: result.score,
-        feedback: result.feedback
+        answerImageUrl: "data:image/jpeg;base64," + req.file.buffer.toString('base64'),
+        score: evaluation.score,
+        feedback: evaluation.feedback
       });
 
       res.json(attempt);

@@ -43,9 +43,15 @@ export async function generateQuestions(subject: string, curriculum: string, dif
 }
 
 export async function evaluateAnswers(imageText: string, questions: any) {
-  const prompt = `Evaluate these exam answers:
+  // Truncate the answer text if it's too long
+  const maxAnswerLength = 2000; // Adjust this value based on token limits
+  const truncatedText = imageText.length > maxAnswerLength 
+    ? imageText.substring(0, maxAnswerLength) + "... (truncated for length)"
+    : imageText;
+
+  const prompt = `Evaluate these exam answers concisely:
   Questions: ${JSON.stringify(questions)}
-  Answers: ${imageText}
+  Answers: ${truncatedText}
 
   Provide evaluation in JSON format:
   {
