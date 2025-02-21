@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Form, FormField, FormItem, FormLabel, FormControl } from "@/components/ui/form";
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
@@ -29,15 +29,11 @@ export default function CreateExam() {
   const [isGenerating, setIsGenerating] = useState(false);
 
   const form = useForm({
-    resolver: zodResolver(insertExamSchema.extend({
-      subject: insertExamSchema.shape.subject.min(1, "Subject is required"),
-      curriculum: insertExamSchema.shape.curriculum.min(1, "Curriculum is required"),
-      difficulty: insertExamSchema.shape.difficulty.min(1, "Difficulty is required")
-    })),
+    resolver: zodResolver(insertExamSchema),
     defaultValues: {
-      curriculum: "",
+      curriculum: CURRICULA[0],
       subject: "",
-      difficulty: "",
+      difficulty: DIFFICULTIES[0],
       format: defaultFormat
     }
   });
@@ -96,7 +92,7 @@ export default function CreateExam() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Curriculum</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select curriculum" />
@@ -108,6 +104,7 @@ export default function CreateExam() {
                         ))}
                       </SelectContent>
                     </Select>
+                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -121,6 +118,7 @@ export default function CreateExam() {
                     <FormControl>
                       <Input placeholder="e.g. Mathematics" {...field} />
                     </FormControl>
+                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -131,7 +129,7 @@ export default function CreateExam() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Difficulty</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select difficulty" />
@@ -143,6 +141,7 @@ export default function CreateExam() {
                         ))}
                       </SelectContent>
                     </Select>
+                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -150,16 +149,10 @@ export default function CreateExam() {
               <Button 
                 type="submit" 
                 className="w-full" 
-                disabled={isGenerating || !form.formState.isValid}
+                disabled={isGenerating}
               >
                 {isGenerating ? "Generating exam..." : "Generate Exam"}
               </Button>
-
-              {Object.keys(form.formState.errors).length > 0 && (
-                <p className="text-sm text-red-500 mt-2">
-                  Please fill in all required fields
-                </p>
-              )}
             </form>
           </Form>
         </CardContent>
