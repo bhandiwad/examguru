@@ -226,10 +226,13 @@ export default function CreateExam() {
                     <FormLabel>Institution Template (Optional)</FormLabel>
                     <Select
                       onValueChange={(value) => {
-                        field.onChange(value ? parseInt(value) : undefined);
-                        const template = templates?.find(t => t.id === parseInt(value));
+                        const templateId = parseInt(value);
+                        field.onChange(templateId === 0 ? undefined : templateId);
+                        const template = templates?.find(t => t.id === templateId);
                         if (template) {
                           setSelectedInstitution(template.institution || "");
+                        } else {
+                          setSelectedInstitution("");
                         }
                       }}
                     >
@@ -239,7 +242,7 @@ export default function CreateExam() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">No specific format</SelectItem>
+                        <SelectItem value="0">No specific format</SelectItem>
                         {templates?.map((template) => (
                           <SelectItem key={template.id} value={template.id.toString()}>
                             {template.institution} - {template.paperFormat}
