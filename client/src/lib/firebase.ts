@@ -9,8 +9,22 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
+console.log("Initializing Firebase with config:", {
+  ...firebaseConfig,
+  apiKey: "REDACTED"
+});
+
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth();
 const provider = new GoogleAuthProvider();
 
-export const loginWithGoogle = () => signInWithRedirect(auth, provider);
+export const loginWithGoogle = async () => {
+  try {
+    console.log("Initiating Google sign-in...");
+    await signInWithRedirect(auth, provider);
+    console.log("Sign-in redirect initiated");
+  } catch (error) {
+    console.error("Google sign-in error:", error);
+    throw error;
+  }
+};
