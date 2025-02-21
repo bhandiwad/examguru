@@ -12,23 +12,39 @@ const upload = multer({
 
 export async function registerRoutes(app: Express) {
   app.post("/api/exams", async (req, res) => {
-    const validation = insertExamSchema.safeParse(req.body);
-    if (!validation.success) {
-      return res.status(400).json({ message: "Invalid exam data" });
+    try {
+      const validation = insertExamSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ 
+          message: "Invalid exam data",
+          errors: validation.error.errors 
+        });
+      }
+
+      // TODO: Add proper authentication middleware
+      const userId = 1; // Temporary for testing
+
+      const questions = await generateQuestions(
+        validation.data.subject,
+        validation.data.curriculum,
+        validation.data.difficulty,
+        validation.data.format
+      );
+
+      const exam = await storage.createExam({
+        ...validation.data,
+        userId,
+        questions: questions.questions
+      });
+
+      res.json(exam);
+    } catch (error: any) {
+      console.error("Error creating exam:", error);
+      res.status(500).json({ 
+        message: "Failed to create exam",
+        error: error.message 
+      });
     }
-
-    const questions = await generateQuestions(
-      validation.data.subject,
-      validation.data.curriculum,
-      validation.data.difficulty,
-      validation.data.format
-    );
-
-    const exam = await storage.createExam({
-      ...validation.data,
-      questions
-    });
-    res.json(exam);
   });
 
   app.get("/api/exams/current", async (req, res) => {
@@ -46,26 +62,34 @@ export async function registerRoutes(app: Express) {
   });
 
   app.post("/api/attempts/upload", upload.single("answer"), async (req, res) => {
-    if (!req.file) {
-      return res.status(400).json({ message: "No file uploaded" });
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      const validation = insertAttemptSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ message: "Invalid attempt data" });
+      }
+
+      // Process image and evaluate
+      const imageBuffer = req.file.buffer;
+      const result = await evaluateAnswers(imageBuffer.toString('base64'), validation.data);
+
+      const attempt = await storage.createAttempt({
+        ...validation.data,
+        score: result.score,
+        feedback: result.feedback
+      });
+
+      res.json(attempt);
+    } catch (error: any) {
+      console.error("Error uploading attempt:", error);
+      res.status(500).json({ 
+        message: "Failed to process attempt",
+        error: error.message 
+      });
     }
-
-    const validation = insertAttemptSchema.safeParse(req.body);
-    if (!validation.success) {
-      return res.status(400).json({ message: "Invalid attempt data" });
-    }
-
-    // Process image and evaluate
-    const imageBuffer = req.file.buffer;
-    const result = await evaluateAnswers(imageBuffer.toString('base64'), validation.data);
-
-    const attempt = await storage.createAttempt({
-      ...validation.data,
-      score: result.score,
-      feedback: result.feedback
-    });
-
-    res.json(attempt);
   });
 
   const httpServer = createServer(app);

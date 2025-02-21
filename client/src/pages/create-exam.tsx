@@ -39,7 +39,8 @@ export default function CreateExam() {
   const createExam = useMutation({
     mutationFn: async (data: any) => {
       setIsGenerating(true);
-      return apiRequest("POST", "/api/exams", data);
+      const response = await apiRequest("POST", "/api/exams", data);
+      return response.json();
     },
     onSuccess: () => {
       toast({
@@ -48,7 +49,7 @@ export default function CreateExam() {
       });
       setLocation("/dashboard");
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
         description: error.message,
@@ -58,6 +59,14 @@ export default function CreateExam() {
     onSettled: () => setIsGenerating(false)
   });
 
+  const onSubmit = async (data: any) => {
+    try {
+      await createExam.mutateAsync(data);
+    } catch (error) {
+      console.error("Failed to create exam:", error);
+    }
+  };
+
   return (
     <div className="container mx-auto py-8 max-w-2xl">
       <Card>
@@ -66,7 +75,7 @@ export default function CreateExam() {
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit((data) => createExam.mutate(data))} className="space-y-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
                 name="curriculum"
@@ -125,7 +134,7 @@ export default function CreateExam() {
               />
 
               <Button type="submit" className="w-full" disabled={isGenerating}>
-                {isGenerating ? "Generating..." : "Generate Exam"}
+                {isGenerating ? "Generating exam..." : "Generate Exam"}
               </Button>
             </form>
           </Form>
