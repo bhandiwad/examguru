@@ -186,7 +186,11 @@ export async function evaluateAnswers(imageBase64: string, questions: any) {
           content: [
             {
               type: "text",
-              text: "Please read this exam answer sheet and provide the answers in a clear text format."
+              text: "Please analyze this exam answer sheet carefully. For each answer, identify:\n" +
+                    "1. The key concepts covered\n" +
+                    "2. The accuracy and completeness of the response\n" +
+                    "3. The clarity and organization of the answer\n" +
+                    "4. Any misconceptions or areas for improvement"
             },
             {
               type: "image_url",
@@ -197,29 +201,57 @@ export async function evaluateAnswers(imageBase64: string, questions: any) {
           ],
         },
       ],
-      max_tokens: 1000,
+      max_tokens: 1500,
     });
 
     const extractedText = visionResponse.choices[0].message.content || "";
-    console.log("Extracted text from image:", extractedText);
+    console.log("Detailed analysis from image:", extractedText);
 
-    // Now evaluate the answers
-    const evaluationPrompt = `Evaluate these exam answers concisely:
+    // Enhanced evaluation with detailed rubric
+    const evaluationPrompt = `
+    Perform a comprehensive evaluation of these exam answers:
     Questions: ${JSON.stringify(questions)}
     Answers: ${extractedText}
 
-    Provide evaluation in JSON format:
+    Provide a detailed evaluation in this EXACT JSON format:
     {
       "score": number,
       "feedback": {
-        "overall": "string",
+        "overall": {
+          "summary": "string",
+          "strengths": ["string"],
+          "areas_for_improvement": ["string"],
+          "learning_recommendations": ["string"]
+        },
         "perQuestion": [
           {
             "questionNumber": number,
             "score": number,
-            "feedback": "string"
+            "conceptualUnderstanding": {
+              "level": "Excellent|Good|Fair|Needs Improvement",
+              "details": "string"
+            },
+            "technicalAccuracy": {
+              "score": number,
+              "details": "string"
+            },
+            "keyConceptsCovered": ["string"],
+            "misconceptions": ["string"],
+            "improvementAreas": ["string"],
+            "exemplarAnswer": "string"
           }
-        ]
+        ],
+        "performanceAnalytics": {
+          "conceptualStrengths": ["string"],
+          "technicalStrengths": ["string"],
+          "learningPatterns": ["string"],
+          "recommendedTopics": ["string"],
+          "difficultyAnalysis": {
+            "easy": number,
+            "medium": number,
+            "hard": number
+          }
+        }
       }
     }`;
 
@@ -227,7 +259,7 @@ export async function evaluateAnswers(imageBase64: string, questions: any) {
       model: "gpt-4o",
       messages: [{ role: "user", content: evaluationPrompt }],
       temperature: 0.3,
-      max_tokens: 1000,
+      max_tokens: 2000,
       response_format: { type: "json_object" }
     });
 
@@ -236,19 +268,18 @@ export async function evaluateAnswers(imageBase64: string, questions: any) {
     }
 
     const parsedResponse = JSON.parse(evaluationResponse.choices[0].message.content);
-    console.log("Successfully evaluated answers:", parsedResponse);
+    console.log("Advanced evaluation completed:", parsedResponse);
     return parsedResponse;
   } catch (error: any) {
-    console.error("Error evaluating answers:", error);
+    console.error("Error in advanced evaluation:", error);
     throw new Error(`Failed to evaluate answers: ${error.message}`);
   }
 }
 
-// Add this new function for analyzing question paper images
 export async function analyzeQuestionPaperTemplate(imageBase64: string) {
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-4o", // Updated to latest model
+      model: "gpt-4o", 
       messages: [
         {
           role: "user",

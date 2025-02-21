@@ -4,6 +4,25 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { PlusCircle, Clock, FileText, BookOpen, Star, FilePlus } from "lucide-react";
 import type { Attempt, Exam } from "@shared/schema";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import {
+  BookOpen as BookOpenIcon,
+  Brain,
+  Clock as ClockIcon,
+  FileText as FileTextIcon,
+  Star as StarIcon,
+  TrendingUp,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+} from "lucide-react";
 
 type AttemptWithExam = Attempt & { exam: Exam };
 
@@ -50,15 +69,15 @@ export default function Dashboard() {
                 <CardContent>
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 text-sm">
-                      <BookOpen className="h-4 w-4" />
+                      <BookOpenIcon className="h-4 w-4" />
                       <span>Curriculum: {exam.curriculum}</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm">
-                      <FileText className="h-4 w-4" />
+                      <FileTextIcon className="h-4 w-4" />
                       <span>Difficulty: {exam.difficulty}</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm">
-                      <Clock className="h-4 w-4" />
+                      <ClockIcon className="h-4 w-4" />
                       <span>Created: {new Date(exam.createdAt).toLocaleDateString()}</span>
                     </div>
                     <Link href={`/take/${exam.id}`}>
@@ -87,33 +106,106 @@ export default function Dashboard() {
         ) : attempts && attempts.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {attempts.map((attempt) => (
-              <Card key={attempt.id}>
+              <Card key={attempt.id} className="relative">
                 <CardHeader>
                   <CardTitle>{attempt.exam.subject}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-2">
+                  <div className="space-y-4">
                     <div className="flex items-center gap-2 text-sm text-gray-500">
-                      <Clock className="h-4 w-4" />
+                      <ClockIcon className="h-4 w-4" />
                       <span>Attempted: {new Date(attempt.startTime).toLocaleDateString()}</span>
                     </div>
+
                     <div className="flex items-center gap-2 text-sm text-gray-500">
-                      <BookOpen className="h-4 w-4" />
+                      <BookOpenIcon className="h-4 w-4" />
                       <span>Curriculum: {attempt.exam.curriculum}</span>
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-500">
-                      <Star className="h-4 w-4" />
-                      <span>Score: {attempt.score !== null ? `${attempt.score}%` : "Not evaluated"}</span>
-                    </div>
-                    {attempt.feedback && (
-                      <div className="mt-2 text-sm">
-                        <p className="font-medium">Feedback:</p>
-                        <p className="text-gray-600">
-                          {typeof attempt.feedback === 'object' && 'overall' in attempt.feedback
-                            ? attempt.feedback.overall
-                            : 'No detailed feedback available'}
-                        </p>
+
+                    <div className="flex items-center gap-2">
+                      <StarIcon className="h-4 w-4 text-primary" />
+                      <div className="flex-1">
+                        <div className="flex justify-between mb-1">
+                          <span className="text-sm font-medium">Score</span>
+                          <span className="text-sm font-medium">{attempt.score}%</span>
+                        </div>
+                        <Progress value={attempt.score} />
                       </div>
+                    </div>
+
+                    {attempt.feedback && (
+                      <Accordion type="single" collapsible className="w-full">
+                        <AccordionItem value="feedback">
+                          <AccordionTrigger className="text-sm font-medium">
+                            Detailed Evaluation
+                          </AccordionTrigger>
+                          <AccordionContent>
+                            {typeof attempt.feedback === 'object' && 'overall' in attempt.feedback ? (
+                              <div className="space-y-4 text-sm">
+                                <div>
+                                  <h4 className="font-medium mb-2">Overview</h4>
+                                  <p className="text-gray-600">{attempt.feedback.overall.summary}</p>
+                                </div>
+
+                                <div>
+                                  <h4 className="font-medium mb-2">Strengths</h4>
+                                  <ul className="list-disc pl-4 space-y-1">
+                                    {attempt.feedback.overall.strengths.map((strength, i) => (
+                                      <li key={i} className="text-gray-600">{strength}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+
+                                <div>
+                                  <h4 className="font-medium mb-2">Areas for Improvement</h4>
+                                  <ul className="list-disc pl-4 space-y-1">
+                                    {attempt.feedback.overall.areas_for_improvement.map((area, i) => (
+                                      <li key={i} className="text-gray-600">{area}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+
+                                <div>
+                                  <h4 className="font-medium mb-2">Learning Recommendations</h4>
+                                  <ul className="list-disc pl-4 space-y-1">
+                                    {attempt.feedback.overall.learning_recommendations.map((rec, i) => (
+                                      <li key={i} className="text-gray-600">{rec}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+
+                                <div>
+                                  <h4 className="font-medium mb-2">Performance Analytics</h4>
+                                  <div className="grid grid-cols-3 gap-2 mt-2">
+                                    <div className="text-center p-2 bg-secondary/10 rounded">
+                                      <div className="text-2xl font-bold text-primary">
+                                        {attempt.feedback.performanceAnalytics.difficultyAnalysis.easy}%
+                                      </div>
+                                      <div className="text-xs text-gray-500">Easy Questions</div>
+                                    </div>
+                                    <div className="text-center p-2 bg-secondary/10 rounded">
+                                      <div className="text-2xl font-bold text-primary">
+                                        {attempt.feedback.performanceAnalytics.difficultyAnalysis.medium}%
+                                      </div>
+                                      <div className="text-xs text-gray-500">Medium Questions</div>
+                                    </div>
+                                    <div className="text-center p-2 bg-secondary/10 rounded">
+                                      <div className="text-2xl font-bold text-primary">
+                                        {attempt.feedback.performanceAnalytics.difficultyAnalysis.hard}%
+                                      </div>
+                                      <div className="text-xs text-gray-500">Hard Questions</div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            ) : (
+                              <p className="text-sm text-gray-600">
+                                Detailed feedback not available for this attempt.
+                              </p>
+                            )}
+                          </AccordionContent>
+                        </AccordionItem>
+                      </Accordion>
                     )}
                   </div>
                 </CardContent>
