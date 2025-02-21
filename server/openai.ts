@@ -179,7 +179,7 @@ export async function evaluateAnswers(imageBase64: string, questions: any) {
   try {
     // First, analyze the image to extract text and context
     const visionResponse = await openai.chat.completions.create({
-      model: "gpt-4-vision-preview",
+      model: "gpt-4o", 
       messages: [
         {
           role: "user",
@@ -197,6 +197,7 @@ export async function evaluateAnswers(imageBase64: string, questions: any) {
           ],
         },
       ],
+      max_tokens: 1000,
     });
 
     const extractedText = visionResponse.choices[0].message.content || "";
@@ -223,10 +224,11 @@ export async function evaluateAnswers(imageBase64: string, questions: any) {
     }`;
 
     const evaluationResponse = await openai.chat.completions.create({
-      model: "gpt-4",
+      model: "gpt-4o",
       messages: [{ role: "user", content: evaluationPrompt }],
       temperature: 0.3,
-      max_tokens: 1000
+      max_tokens: 1000,
+      response_format: { type: "json_object" }
     });
 
     if (!evaluationResponse.choices[0].message.content) {
@@ -246,7 +248,7 @@ export async function evaluateAnswers(imageBase64: string, questions: any) {
 export async function analyzeQuestionPaperTemplate(imageBase64: string) {
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-4-vision-preview",
+      model: "gpt-4o", // Updated to latest model
       messages: [
         {
           role: "user",
@@ -287,6 +289,7 @@ export async function analyzeQuestionPaperTemplate(imageBase64: string) {
         },
       ],
       max_tokens: 1000,
+      response_format: { type: "json_object" }
     });
 
     if (!response.choices[0].message.content) {
