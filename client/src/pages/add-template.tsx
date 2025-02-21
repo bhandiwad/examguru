@@ -48,13 +48,17 @@ export default function AddTemplate() {
 
   const createTemplate = useMutation({
     mutationFn: async (data: any) => {
-      const response = await apiRequest("POST", "/api/templates", {
+      // Ensure duration is a number
+      const formattedData = {
         ...data,
         formatMetadata: {
           ...data.formatMetadata,
+          duration: Number(data.formatMetadata.duration),
           sections
         }
-      });
+      };
+
+      const response = await apiRequest("POST", "/api/templates", formattedData);
       return response.json();
     },
     onSuccess: () => {
@@ -214,9 +218,9 @@ export default function AddTemplate() {
                   <FormItem>
                     <FormLabel>Question Structure</FormLabel>
                     <FormControl>
-                      <Textarea 
-                        placeholder="Describe the structure of questions (e.g. 'Each theory question should have sub-parts a, b, c')" 
-                        {...field} 
+                      <Textarea
+                        placeholder="Describe the structure of questions (e.g. 'Each theory question should have sub-parts a, b, c')"
+                        {...field}
                       />
                     </FormControl>
                     <FormMessage />
@@ -231,7 +235,7 @@ export default function AddTemplate() {
                     Add Section
                   </Button>
                 </div>
-                
+
                 {sections.map((section, index) => (
                   <Card key={index} className="p-4">
                     <div className="space-y-4">
@@ -296,7 +300,12 @@ export default function AddTemplate() {
                   <FormItem>
                     <FormLabel>Duration (minutes)</FormLabel>
                     <FormControl>
-                      <Input type="number" {...field} />
+                      <Input
+                        type="number"
+                        {...field}
+                        onChange={(e) => field.onChange(Number(e.target.value))}
+                        value={field.value}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -310,9 +319,9 @@ export default function AddTemplate() {
                   <FormItem>
                     <FormLabel>General Rubric</FormLabel>
                     <FormControl>
-                      <Textarea 
-                        placeholder="General marking guidelines for the paper" 
-                        {...field} 
+                      <Textarea
+                        placeholder="General marking guidelines for the paper"
+                        {...field}
                       />
                     </FormControl>
                     <FormMessage />
