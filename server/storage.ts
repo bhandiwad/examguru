@@ -1,5 +1,5 @@
-import { users, exams, attempts, questionTemplates } from "@shared/schema";
-import type { User, Exam, Attempt, QuestionTemplate, InsertUser, InsertExam, InsertAttempt, InsertQuestionTemplate } from "@shared/schema";
+import { users, exams, attempts, questionTemplates, achievements, userAchievements } from "@shared/schema";
+import type { User, Exam, Attempt, QuestionTemplate, InsertUser, InsertExam, InsertAttempt, InsertQuestionTemplate, Achievement, UserAchievement, InsertAchievement, InsertUserAchievement } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, or, ilike } from "drizzle-orm";
 
@@ -21,6 +21,12 @@ export interface IStorage {
     paperFormat?: string;
   }): Promise<QuestionTemplate[]>;
   getTemplateById(id: number): Promise<QuestionTemplate | undefined>;
+  // Achievement methods
+  createAchievement(achievement: InsertAchievement): Promise<Achievement>;
+  getAchievements(): Promise<Achievement[]>;
+  getUserAchievements(userId: number): Promise<(UserAchievement & { achievement: Achievement })[]>;
+  trackAchievementProgress(data: InsertUserAchievement): Promise<UserAchievement>;
+  checkAndAwardAchievements(userId: number): Promise<Achievement[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -148,6 +154,104 @@ export class DatabaseStorage implements IStorage {
       .from(questionTemplates)
       .where(eq(questionTemplates.id, id));
     return template;
+  }
+
+  async createAchievement(achievement: InsertAchievement): Promise<Achievement> {
+    const [newAchievement] = await db
+      .insert(achievements)
+      .values(achievement)
+      .returning();
+    return newAchievement;
+  }
+
+  async getAchievements(): Promise<Achievement[]> {
+    return db
+      .select()
+      .from(achievements)
+      .orderBy(desc(achievements.points));
+  }
+
+  async getUserAchievements(userId: number): Promise<(UserAchievement & { achievement: Achievement })[]> {
+    const results = await db
+      .select({
+        userAchievement: userAchievements,
+        achievement: achievements
+      })
+      .from(userAchievements)
+      .where(eq(userAchievements.userId, userId))
+      .innerJoin(achievements, eq(userAchievements.achievementId, achievements.id))
+      .orderBy(desc(userAchievements.earnedAt));
+
+    return results.map(({ userAchievement, achievement }) => ({
+      ...userAchievement,
+      achievement
+    }));
+  }
+
+  async trackAchievementProgress(data: InsertUserAchievement): Promise<UserAchievement> {
+    const [userAchievement] = await db
+      .insert(userAchievements)
+      .values(data)
+      .returning();
+    return userAchievement;
+  }
+
+  async checkAndAwardAchievements(userId: number): Promise<Achievement[]> {
+    // Get all achievements and user's current progress
+    const [achievements, attempts, userAchievements] = await Promise.all([
+      this.getAchievements(),
+      this.getAttempts(userId),
+      this.getUserAchievements(userId)
+    ]);
+
+    const earnedAchievementIds = new Set(userAchievements.map(ua => ua.achievementId));
+    const newlyEarnedAchievements: Achievement[] = [];
+
+    for (const achievement of achievements) {
+      // Skip if already earned
+      if (earnedAchievementIds.has(achievement.id)) continue;
+
+      // Check if achievement requirements are met
+      const req = achievement.requirement as any;
+      let requirementsMet = false;
+
+      switch (achievement.type) {
+        case "EXAM_SCORE":
+          requirementsMet = attempts.some(a => a.score >= req.score);
+          break;
+        case "STREAK":
+          // TODO: Implement streak checking logic
+          break;
+        case "SUBJECT_MASTERY":
+          const subjectScores = attempts.reduce((acc, attempt) => {
+            const subject = attempt.exam.subject;
+            if (!acc[subject]) {
+              acc[subject] = [];
+            }
+            if (attempt.score) {
+              acc[subject].push(attempt.score);
+            }
+            return acc;
+          }, {} as Record<string, number[]>);
+
+          requirementsMet = Object.values(subjectScores).some(scores => {
+            const average = scores.reduce((a, b) => a + b, 0) / scores.length;
+            return average >= req.subjectMasteryLevel;
+          });
+          break;
+      }
+
+      if (requirementsMet) {
+        await this.trackAchievementProgress({
+          userId,
+          achievementId: achievement.id,
+          progress: { completed: 1 }
+        });
+        newlyEarnedAchievements.push(achievement);
+      }
+    }
+
+    return newlyEarnedAchievements;
   }
 }
 

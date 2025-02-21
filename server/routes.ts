@@ -228,6 +228,39 @@ export async function registerRoutes(app: Express) {
     }
   });
 
+  app.get("/api/achievements", async (req, res) => {
+    try {
+      // TODO: Add proper authentication middleware
+      const userId = 1; // Temporary for testing
+      const userAchievements = await storage.getUserAchievements(userId);
+
+      // Transform the data to include progress information
+      const achievementsWithProgress = userAchievements.map(ua => ({
+        ...ua.achievement,
+        earned: true,
+        progress: 1
+      }));
+
+      // Get all achievements to include unearned ones
+      const allAchievements = await storage.getAchievements();
+      const unearned = allAchievements
+        .filter(a => !achievementsWithProgress.some(ua => ua.id === a.id))
+        .map(a => ({
+          ...a,
+          earned: false,
+          progress: 0
+        }));
+
+      res.json([...achievementsWithProgress, ...unearned]);
+    } catch (error: any) {
+      console.error("Error fetching achievements:", error);
+      res.status(500).json({
+        message: "Failed to fetch achievements",
+        error: error.message
+      });
+    }
+  });
+
   app.post("/api/attempts/upload", upload.single("answer"), async (req, res) => {
     try {
       if (!req.file) {
@@ -260,11 +293,64 @@ export async function registerRoutes(app: Express) {
         feedback: evaluation.feedback
       });
 
-      res.json(attempt);
+      // Check and award any new achievements
+      const newAchievements = await storage.checkAndAwardAchievements(userId);
+
+      // Return both the attempt and any new achievements
+      res.json({
+        attempt,
+        newAchievements
+      });
     } catch (error: any) {
       console.error("Error uploading attempt:", error);
       res.status(500).json({
         message: "Failed to process attempt",
+        error: error.message
+      });
+    }
+  });
+
+  app.post("/api/achievements/seed", async (req, res) => {
+    try {
+      const defaultAchievements = [
+        {
+          name: "Perfect Score",
+          description: "Score 100% on any exam",
+          type: "EXAM_SCORE",
+          requirement: { score: 100 },
+          badgeIcon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-6 h-6"><path d="M12 15l-2 5l-4-3l-3 4l-1-6l-5-2l5-2l1-6l3 4l4-3l2 5l2-5l4 3l3-4l1 6l5 2l-5 2l-1 6l-3-4l-4 3z"/></svg>`,
+          points: 100
+        },
+        {
+          name: "Subject Master",
+          description: "Achieve an average score of 90% or higher in any subject",
+          type: "SUBJECT_MASTERY",
+          requirement: { subjectMasteryLevel: 90 },
+          badgeIcon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-6 h-6"><path d="M12 2L2 7l10 5l10-5l-10-5zM2 17l10 5l10-5M2 12l10 5l10-5"/></svg>`,
+          points: 75
+        },
+        {
+          name: "Template Creator",
+          description: "Create your first question template",
+          type: "TEMPLATE_CREATION",
+          requirement: { templateCount: 1 },
+          badgeIcon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-6 h-6"><path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>`,
+          points: 50
+        }
+      ];
+
+      // Create achievements
+      const createdAchievements = await Promise.all(
+        defaultAchievements.map(achievement =>
+          storage.createAchievement(achievement)
+        )
+      );
+
+      res.json(createdAchievements);
+    } catch (error: any) {
+      console.error("Error seeding achievements:", error);
+      res.status(500).json({
+        message: "Failed to seed achievements",
         error: error.message
       });
     }

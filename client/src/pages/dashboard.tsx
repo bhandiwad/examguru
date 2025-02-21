@@ -6,6 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { PlusCircle, FilePlus } from "lucide-react";
 import type { Attempt, Exam, EvaluationFeedback } from "@shared/schema";
 import { PerformanceTrends } from "@/components/PerformanceTrends";
+import { AchievementDisplay } from "@/components/AchievementDisplay";
 import { PageHeader } from "@/components/ui/page-header";
 import {
   Accordion,
@@ -60,6 +61,11 @@ export default function Dashboard() {
           <PerformanceTrends attempts={attempts} />
         </div>
       )}
+
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold mb-4">Achievements & Badges</h2>
+        <AchievementDisplay />
+      </div>
 
       {exams && exams.length > 0 && (
         <div className="mb-8">

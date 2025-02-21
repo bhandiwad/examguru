@@ -46,6 +46,25 @@ export const attempts = pgTable("attempts", {
   feedback: jsonb("feedback")
 });
 
+export const achievements = pgTable("achievements", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  type: text("type").notNull(), // e.g., "EXAM_SCORE", "STREAK", "SUBJECT_MASTERY"
+  requirement: jsonb("requirement").notNull(), // e.g., { "score": 90, "examCount": 5 }
+  badgeIcon: text("badge_icon").notNull(), // SVG string for the badge
+  points: integer("points").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow()
+});
+
+export const userAchievements = pgTable("user_achievements", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  achievementId: integer("achievement_id").notNull(),
+  earnedAt: timestamp("earned_at").notNull().defaultNow(),
+  progress: jsonb("progress").notNull(), // Track progress towards achievement
+});
+
 export const insertQuestionTemplateSchema = z.object({
   curriculum: z.string().min(1, "Curriculum is required"),
   subject: z.string().min(1, "Subject is required"),
@@ -136,6 +155,27 @@ export const insertAttemptSchema = z.object({
   feedback: evaluationFeedbackSchema.optional()
 });
 
+export const achievementSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  description: z.string().min(1, "Description is required"),
+  type: z.enum(["EXAM_SCORE", "STREAK", "SUBJECT_MASTERY", "TEMPLATE_CREATION"]),
+  requirement: z.object({
+    score: z.number().optional(),
+    examCount: z.number().optional(),
+    streakDays: z.number().optional(),
+    templateCount: z.number().optional(),
+    subjectMasteryLevel: z.number().optional()
+  }),
+  badgeIcon: z.string().min(1, "Badge icon is required"),
+  points: z.number().min(0, "Points must be positive")
+});
+
+export const userAchievementSchema = z.object({
+  userId: z.number().int().min(1, "User ID is required"),
+  achievementId: z.number().int().min(1, "Achievement ID is required"),
+  progress: z.record(z.string(), z.number())
+});
+
 // Export types
 export type User = typeof users.$inferSelect;
 export type Exam = typeof exams.$inferSelect;
@@ -146,3 +186,7 @@ export type InsertExam = z.infer<typeof insertExamSchema>;
 export type InsertAttempt = z.infer<typeof insertAttemptSchema>;
 export type InsertQuestionTemplate = z.infer<typeof insertQuestionTemplateSchema>;
 export type EvaluationFeedback = z.infer<typeof evaluationFeedbackSchema>;
+export type Achievement = typeof achievements.$inferSelect;
+export type UserAchievement = typeof userAchievements.$inferSelect;
+export type InsertAchievement = z.infer<typeof achievementSchema>;
+export type InsertUserAchievement = z.infer<typeof userAchievementSchema>;
