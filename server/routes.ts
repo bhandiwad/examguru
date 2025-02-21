@@ -17,6 +17,14 @@ export async function registerRoutes(app: Express) {
     try {
       const { curriculum, subject, grade, institution, paperFormat } = req.query;
 
+      console.log("Template search request with params:", {
+        curriculum,
+        subject,
+        grade,
+        institution,
+        paperFormat
+      });
+
       const templates = await storage.getTemplates({
         curriculum: curriculum as string,
         subject: subject as string,
@@ -25,6 +33,7 @@ export async function registerRoutes(app: Express) {
         paperFormat: paperFormat as string
       });
 
+      console.log("Found templates:", templates);
       res.json(templates);
     } catch (error: any) {
       console.error("Error searching templates:", error);

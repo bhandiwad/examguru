@@ -54,21 +54,25 @@ export default function CreateExam() {
   const { data: templates, isLoading: templatesLoading } = useQuery<QuestionTemplate[]>({
     queryKey: ["/api/templates/search", form.watch("curriculum"), form.watch("subject"), form.watch("grade")],
     queryFn: async () => {
+      console.log("Fetching templates with params:", {
+        curriculum: form.watch("curriculum"),
+        subject: form.watch("subject"),
+        grade: form.watch("grade")
+      });
+
       const params = new URLSearchParams({
         curriculum: form.watch("curriculum"),
         subject: form.watch("subject"),
         grade: form.watch("grade")
       });
 
-      if (selectedInstitution) {
-        params.append("institution", selectedInstitution);
-      }
-
       const response = await fetch(`/api/templates/search?${params}`);
       if (!response.ok) {
         throw new Error("Failed to fetch templates");
       }
-      return response.json();
+      const data = await response.json();
+      console.log("Fetched templates:", data);
+      return data;
     },
     enabled: !!form.watch("curriculum") && !!form.watch("subject") && !!form.watch("grade")
   });
