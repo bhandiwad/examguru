@@ -1,5 +1,4 @@
 import { pgTable, text, serial, integer, boolean, jsonb, timestamp } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 export const users = pgTable("users", {
@@ -31,13 +30,34 @@ export const attempts = pgTable("attempts", {
   feedback: jsonb("feedback")
 });
 
-export const insertUserSchema = createInsertSchema(users);
-export const insertExamSchema = createInsertSchema(exams);
-export const insertAttemptSchema = createInsertSchema(attempts);
+// Create Schema for exam creation - we'll omit userId and questions as they're handled by the server
+export const insertExamSchema = z.object({
+  curriculum: z.string().min(1, "Curriculum is required"),
+  subject: z.string().min(1, "Subject is required"),
+  difficulty: z.string().min(1, "Difficulty is required"),
+  format: z.object({
+    totalMarks: z.number(),
+    sections: z.array(z.object({
+      type: z.string(),
+      marks: z.number()
+    }))
+  })
+});
+
+// Create Schema for attempt creation
+export const insertAttemptSchema = z.object({
+  examId: z.number().int().min(1, "Exam ID is required"),
+  userId: z.number().int().min(1, "User ID is required"),
+  startTime: z.date(),
+  endTime: z.date().optional(),
+  answerImageUrl: z.string().optional(),
+  score: z.number().int().optional(),
+  feedback: z.any().optional()
+});
 
 export type User = typeof users.$inferSelect;
 export type Exam = typeof exams.$inferSelect;
 export type Attempt = typeof attempts.$inferSelect;
-export type InsertUser = z.infer<typeof insertUserSchema>;
+export type InsertUser = typeof users.$inferInsert;
 export type InsertExam = z.infer<typeof insertExamSchema>;
 export type InsertAttempt = z.infer<typeof insertAttemptSchema>;

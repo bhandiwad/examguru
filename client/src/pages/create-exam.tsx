@@ -23,12 +23,19 @@ const defaultFormat = {
   ]
 };
 
+type FormData = {
+  curriculum: string;
+  subject: string;
+  difficulty: string;
+  format: typeof defaultFormat;
+};
+
 export default function CreateExam() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const form = useForm({
+  const form = useForm<FormData>({
     resolver: zodResolver(insertExamSchema),
     defaultValues: {
       curriculum: CURRICULA[0],
@@ -39,12 +46,9 @@ export default function CreateExam() {
   });
 
   const createExam = useMutation({
-    mutationFn: async (data: any) => {
+    mutationFn: async (data: FormData) => {
       console.log("Creating exam with data:", data);
-      const response = await apiRequest("POST", "/api/exams", {
-        ...data,
-        format: defaultFormat
-      });
+      const response = await apiRequest("POST", "/api/exams", data);
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -71,22 +75,8 @@ export default function CreateExam() {
     }
   });
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    console.log("Form submission started");
-
-    const formData = form.getValues();
-    console.log("Form values:", formData);
-
-    if (!formData.subject) {
-      toast({
-        title: "Error",
-        description: "Please enter a subject",
-        variant: "destructive"
-      });
-      return;
-    }
-
+  async function onSubmit(formData: FormData) {
+    console.log("Form submission started with values:", formData);
     try {
       setIsGenerating(true);
       toast({
@@ -110,7 +100,7 @@ export default function CreateExam() {
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
                 name="curriculum"

@@ -28,7 +28,7 @@ export async function registerRoutes(app: Express) {
       const userId = 1; // Temporary for testing
 
       console.log("Generating questions with validated data:", validation.data);
-      const questions = await generateQuestions(
+      const generatedQuestions = await generateQuestions(
         validation.data.subject,
         validation.data.curriculum,
         validation.data.difficulty,
@@ -39,7 +39,7 @@ export async function registerRoutes(app: Express) {
       const exam = await storage.createExam({
         ...validation.data,
         userId,
-        questions: questions.questions
+        questions: generatedQuestions.questions
       });
 
       console.log("Exam created successfully:", exam);
