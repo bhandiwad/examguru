@@ -13,8 +13,11 @@ const upload = multer({
 export async function registerRoutes(app: Express) {
   app.post("/api/exams", async (req, res) => {
     try {
+      console.log("Received exam creation request:", req.body);
+
       const validation = insertExamSchema.safeParse(req.body);
       if (!validation.success) {
+        console.error("Validation failed:", validation.error.errors);
         return res.status(400).json({ 
           message: "Invalid exam data",
           errors: validation.error.errors 
@@ -24,6 +27,7 @@ export async function registerRoutes(app: Express) {
       // TODO: Add proper authentication middleware
       const userId = 1; // Temporary for testing
 
+      console.log("Generating questions with validated data:", validation.data);
       const questions = await generateQuestions(
         validation.data.subject,
         validation.data.curriculum,
@@ -31,12 +35,14 @@ export async function registerRoutes(app: Express) {
         validation.data.format
       );
 
+      console.log("Creating exam in storage");
       const exam = await storage.createExam({
         ...validation.data,
         userId,
         questions: questions.questions
       });
 
+      console.log("Exam created successfully:", exam);
       res.json(exam);
     } catch (error: any) {
       console.error("Error creating exam:", error);
@@ -48,17 +54,33 @@ export async function registerRoutes(app: Express) {
   });
 
   app.get("/api/exams/current", async (req, res) => {
-    // TODO: Add proper authentication middleware
-    const userId = 1; // Temporary for testing
-    const exam = await storage.getCurrentExam(userId);
-    res.json(exam);
+    try {
+      // TODO: Add proper authentication middleware
+      const userId = 1; // Temporary for testing
+      const exam = await storage.getCurrentExam(userId);
+      res.json(exam);
+    } catch (error: any) {
+      console.error("Error fetching current exam:", error);
+      res.status(500).json({
+        message: "Failed to fetch current exam",
+        error: error.message
+      });
+    }
   });
 
   app.get("/api/attempts", async (req, res) => {
-    // TODO: Add proper authentication middleware
-    const userId = 1; // Temporary for testing
-    const attempts = await storage.getAttempts(userId);
-    res.json(attempts);
+    try {
+      // TODO: Add proper authentication middleware
+      const userId = 1; // Temporary for testing
+      const attempts = await storage.getAttempts(userId);
+      res.json(attempts);
+    } catch (error: any) {
+      console.error("Error fetching attempts:", error);
+      res.status(500).json({
+        message: "Failed to fetch attempts",
+        error: error.message
+      });
+    }
   });
 
   app.post("/api/attempts/upload", upload.single("answer"), async (req, res) => {

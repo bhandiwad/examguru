@@ -40,16 +40,21 @@ export default function CreateExam() {
 
   const createExam = useMutation({
     mutationFn: async (data: any) => {
-      console.log("Submitting exam data:", data);
+      console.log("Creating exam with data:", data);
       const response = await apiRequest("POST", "/api/exams", {
         ...data,
-        format: defaultFormat // Ensure format is always included
+        format: defaultFormat
       });
-      const result = await response.json();
-      console.log("Received response:", result);
-      return result;
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to create exam");
+      }
+
+      return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log("Exam created successfully:", data);
       toast({
         title: "Success",
         description: "Your exam has been generated successfully"
@@ -67,6 +72,7 @@ export default function CreateExam() {
   });
 
   const onSubmit = async (data: any) => {
+    console.log("Form submitted with values:", data);
     try {
       setIsGenerating(true);
       await createExam.mutateAsync(data);
