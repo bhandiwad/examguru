@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import type { Exam } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import html2canvas from 'html2canvas';
+import { PageHeader } from "@/components/ui/page-header";
 
 type Question = {
   type: string;
@@ -148,16 +149,16 @@ export default function TakeExam() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto py-8 text-center">
-        Loading exam...
+      <div className="container mx-auto py-8">
+        <PageHeader title="Loading Exam..." />
       </div>
     );
   }
 
   if (!exam) {
     return (
-      <div className="container mx-auto py-8 text-center">
-        Exam not found.
+      <div className="container mx-auto py-8">
+        <PageHeader title="Exam Not Found" />
       </div>
     );
   }
@@ -166,6 +167,8 @@ export default function TakeExam() {
 
   return (
     <div className="container mx-auto py-8 max-w-4xl">
+      <PageHeader title={`${exam.subject} Exam`} />
+
       <Card className="mb-4">
         <CardHeader>
           <CardTitle className="flex justify-between items-center">
@@ -173,8 +176,8 @@ export default function TakeExam() {
             {!isRunning ? (
               <Button onClick={startExam}>Start Exam</Button>
             ) : (
-              <Button 
-                onClick={finishExam} 
+              <Button
+                onClick={finishExam}
                 variant="destructive"
                 disabled={submitMutation.isPending}
               >
@@ -202,8 +205,8 @@ export default function TakeExam() {
 
               {question.image && (
                 <div className="mb-4">
-                  <img 
-                    src={question.image} 
+                  <img
+                    src={question.image}
                     alt={`Diagram for question ${index + 1}`}
                     className="max-w-full h-auto rounded-lg shadow-md"
                   />
