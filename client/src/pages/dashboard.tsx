@@ -51,7 +51,7 @@ export default function Dashboard() {
                       <Clock className="h-4 w-4" />
                       <span>Created: {new Date(exam.createdAt).toLocaleDateString()}</span>
                     </div>
-                    <Link href="/take">
+                    <Link href={`/take/${exam.id}`}>
                       <Button className="w-full mt-4">
                         Take Exam
                       </Button>

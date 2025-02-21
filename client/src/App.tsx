@@ -15,7 +15,7 @@ function Router() {
       <Route path="/" component={Login} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/create" component={CreateExam} />
-      <Route path="/take" component={TakeExam} />
+      <Route path="/take/:id" component={TakeExam} />
       <Route path="/upload" component={UploadAnswers} />
       <Route component={NotFound} />
     </Switch>

@@ -72,6 +72,28 @@ export async function registerRoutes(app: Express) {
     }
   });
 
+  app.get("/api/exams/:id", async (req, res) => {
+    try {
+      const examId = parseInt(req.params.id);
+      if (isNaN(examId)) {
+        return res.status(400).json({ message: "Invalid exam ID" });
+      }
+
+      const exam = await storage.getExam(examId);
+      if (!exam) {
+        return res.status(404).json({ message: "Exam not found" });
+      }
+
+      res.json(exam);
+    } catch (error: any) {
+      console.error("Error fetching exam:", error);
+      res.status(500).json({
+        message: "Failed to fetch exam",
+        error: error.message
+      });
+    }
+  });
+
   app.get("/api/attempts", async (req, res) => {
     try {
       // TODO: Add proper authentication middleware
