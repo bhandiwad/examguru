@@ -110,8 +110,15 @@ export default function TakeExam() {
     }
 
     try {
-      const canvas = await html2canvas(examContent);
+      // Configure html2canvas with proper settings
+      const canvas = await html2canvas(examContent, {
+        scale: 2, // Higher quality
+        useCORS: true,
+        logging: true,
+        backgroundColor: "#ffffff"
+      });
 
+      // Convert canvas to blob
       canvas.toBlob(async (blob) => {
         if (!blob) {
           toast({
@@ -129,7 +136,7 @@ export default function TakeExam() {
         formData.append("answer", blob, "answer.png");
 
         submitMutation.mutate(formData);
-      }, 'image/png');
+      }, 'image/png', 1.0); // Highest quality PNG
     } catch (error) {
       toast({
         title: "Error",
