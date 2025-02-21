@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { insertExamSchema } from "@shared/schema";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 const CURRICULA = ["ICSE", "CBSE", "Karnataka State Board"];
 const DIFFICULTIES = ["Easy", "Medium", "Hard"];
@@ -59,6 +59,10 @@ export default function CreateExam() {
     },
     onSuccess: (data) => {
       console.log("Exam created successfully:", data);
+      // Invalidate the queries so the dashboard will refetch fresh data
+      queryClient.invalidateQueries({ queryKey: ["/api/exams/current"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/attempts"] });
+
       toast({
         title: "Success",
         description: "Your exam has been generated successfully"
