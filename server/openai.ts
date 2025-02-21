@@ -43,7 +43,7 @@ export async function generateQuestions(
      - Recommended study resources for this topic
   5. Total marks must match the format specification
 
-  Format your response as a JSON object with this EXACT structure:
+  Your response MUST be a valid JSON object with this exact structure:
   {
     "questions": [
       {
@@ -75,7 +75,7 @@ export async function generateQuestions(
       messages: [
         {
           role: "system",
-          content: "You are an expert exam question generator. Always respond with valid JSON that matches the specified schema exactly."
+          content: "You are an expert exam question generator. You must ALWAYS respond with a valid JSON object matching the specified schema exactly. Do not include any explanatory text outside the JSON structure."
         },
         {
           role: "user",
@@ -83,8 +83,7 @@ export async function generateQuestions(
         }
       ],
       temperature: 0.7,
-      max_tokens: 2000,
-      response_format: { type: "json_object" }
+      max_tokens: 2000
     });
 
     if (!response.choices[0].message.content) {
