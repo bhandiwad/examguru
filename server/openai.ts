@@ -42,44 +42,64 @@ export async function generateQuestions(subject: string, curriculum: string, dif
   }
 }
 
-export async function evaluateAnswers(imageText: string, questions: any) {
-  // Truncate the answer text if it's too long
-  const maxAnswerLength = 2000; // Adjust this value based on token limits
-  const truncatedText = imageText.length > maxAnswerLength 
-    ? imageText.substring(0, maxAnswerLength) + "... (truncated for length)"
-    : imageText;
-
-  const prompt = `Evaluate these exam answers concisely:
-  Questions: ${JSON.stringify(questions)}
-  Answers: ${truncatedText}
-
-  Provide evaluation in JSON format:
-  {
-    "score": number,
-    "feedback": {
-      "overall": "string",
-      "perQuestion": [
-        {
-          "questionNumber": number,
-          "score": number,
-          "feedback": "string"
-        }
-      ]
-    }
-  }`;
-
+export async function evaluateAnswers(imageBase64: string, questions: any) {
   try {
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o", 
-      messages: [{ role: "user", content: prompt }],
+    // First, analyze the image to extract text and context
+    const visionResponse = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: "Please read this exam answer sheet and provide the answers in a clear text format."
+            },
+            {
+              type: "image_url",
+              image_url: {
+                url: `data:image/jpeg;base64,${imageBase64}`
+              }
+            }
+          ],
+        },
+      ],
+    });
+
+    const extractedText = visionResponse.choices[0].message.content || "";
+    console.log("Extracted text from image:", extractedText);
+
+    // Now evaluate the answers
+    const evaluationPrompt = `Evaluate these exam answers concisely:
+    Questions: ${JSON.stringify(questions)}
+    Answers: ${extractedText}
+
+    Provide evaluation in JSON format:
+    {
+      "score": number,
+      "feedback": {
+        "overall": "string",
+        "perQuestion": [
+          {
+            "questionNumber": number,
+            "score": number,
+            "feedback": "string"
+          }
+        ]
+      }
+    }`;
+
+    const evaluationResponse = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [{ role: "user", content: evaluationPrompt }],
       response_format: { type: "json_object" }
     });
 
-    if (!response.choices[0].message.content) {
-      throw new Error("No content received from OpenAI");
+    if (!evaluationResponse.choices[0].message.content) {
+      throw new Error("No evaluation content received from OpenAI");
     }
 
-    const parsedResponse = JSON.parse(response.choices[0].message.content);
+    const parsedResponse = JSON.parse(evaluationResponse.choices[0].message.content);
     console.log("Successfully evaluated answers:", parsedResponse);
     return parsedResponse;
   } catch (error: any) {
