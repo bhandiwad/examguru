@@ -25,13 +25,23 @@ export async function generateQuestions(
   Difficulty level: ${difficulty}
   Format: ${JSON.stringify(format)}
 
-  Important requirements:
-  1. For MCQ questions, ALWAYS provide 4 choices labeled A, B, C, D
-  2. For questions that would benefit from visual aids (e.g., pendulum motion, light rays, circuits), include a description for image generation
-  3. Follow the section structure exactly as specified in the template`;
+  STRICT REQUIREMENTS:
+  1. You MUST follow the exact section structure and question count from the template
+  2. For Section A:
+     - Generate EXACTLY 15 MCQ questions
+     - Each MCQ MUST have exactly 4 choices labeled A, B, C, D
+     - Each MCQ worth 1 mark
+  3. For Section B:
+     - Questions should be a mix of theory and numerical problems
+     - Each question worth 5 marks
+  4. For diagrams:
+     - Only include simple, 2D diagrams for physics concepts (e.g., force diagrams, ray diagrams)
+     - Keep diagrams black and white, minimal design
+     - Focus on clarity and educational value
+  5. The total marks must exactly match the template specification`;
 
   if (selectedTemplate) {
-    promptContent += `\n\nUse this specific institution's format:
+    promptContent += `\n\nUSE THIS EXACT TEMPLATE FORMAT:
     Institution: ${selectedTemplate.institution}
     Paper Format: ${selectedTemplate.paperFormat}
     Format Details: ${JSON.stringify(selectedTemplate.formatMetadata, null, 2)}
@@ -41,13 +51,13 @@ export async function generateQuestions(
   promptContent += `\n\nUse these curriculum-specific templates as guidelines:
   ${JSON.stringify(templates, null, 2)}
 
-  Please provide the questions in JSON format with the following structure:
+  Provide the questions in this EXACT JSON format:
   {
     "questions": [
       {
         "type": "MCQ",
         "text": "string",
-        "marks": number,
+        "marks": 1,
         "choices": {
           "A": "string",
           "B": "string",
@@ -62,22 +72,14 @@ export async function generateQuestions(
       {
         "type": "Theory|Numerical",
         "text": "string",
-        "marks": number,
+        "marks": 5,
         "expectedAnswer": "string",
         "rubric": "string",
         "section": "string",
         "imageDescription": "string (optional)"
       }
     ]
-  }
-
-  Ensure that:
-  1. Questions follow the curriculum standards and institution format
-  2. Each question matches the template structure exactly
-  3. MCQ questions MUST have 4 choices
-  4. Include image descriptions for physics concepts that need visualization
-  5. Difficulty level is appropriate for the grade
-  6. Total marks match the format specification`;
+  }`;
 
   try {
     const response = await openai.chat.completions.create({
@@ -93,13 +95,33 @@ export async function generateQuestions(
 
     const parsedResponse = JSON.parse(response.choices[0].message.content);
 
+    // Validate question count and structure
+    if (!selectedTemplate?.formatMetadata?.sections) {
+      throw new Error("Template sections not properly defined");
+    }
+
+    const sections = selectedTemplate.formatMetadata.sections;
+    for (const section of sections) {
+      const questionsInSection = parsedResponse.questions.filter(
+        (q: any) => q.section === section.name
+      ).length;
+
+      if (questionsInSection !== section.questionCount) {
+        throw new Error(
+          `Invalid number of questions in section ${section.name}. Expected ${section.questionCount}, got ${questionsInSection}`
+        );
+      }
+    }
+
     // Generate images for questions that need them
     for (const question of parsedResponse.questions) {
       if (question.imageDescription) {
         try {
           const imageResponse = await openai.images.generate({
             model: "dall-e-3",
-            prompt: `Create a clear, textbook-style diagram for a physics question: ${question.imageDescription}. The image should be simple, clear, and educational.`,
+            prompt: `Create a simple, 2D black and white diagram for a physics question: ${question.imageDescription}. 
+            The diagram should be minimalist, clear, and focus on the key physics concept. 
+            Use only black lines on white background, no colors or shading.`,
             n: 1,
             size: "1024x1024",
             quality: "standard",
