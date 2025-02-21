@@ -41,38 +41,9 @@ export async function generateQuestions(
      - The specific chapter/topic it relates to
      - The key concepts being tested
      - Recommended study resources for this topic
-  5. Total marks must match the format specification`;
+  5. Total marks must match the format specification
 
-  // Add template-specific requirements if a template is selected
-  if (selectedTemplate) {
-    const sections = selectedTemplate.formatMetadata.sections;
-    const sectionRequirements = sections.map(section =>
-      `Section ${section.name}:
-       - Must have EXACTLY ${section.questionCount} questions
-       - Question type: ${section.questionType}
-       - Marks per question: ${section.marksPerQuestion}
-       - Format: ${section.format}`
-    ).join('\n');
-
-    promptContent += `\n\nUSE THIS EXACT TEMPLATE FORMAT:
-    Institution: ${selectedTemplate.institution}
-    Paper Format: ${selectedTemplate.paperFormat}
-
-    SECTION REQUIREMENTS:
-    ${sectionRequirements}
-
-    Format Details: ${JSON.stringify(selectedTemplate.formatMetadata, null, 2)}`;
-  } else {
-    // Default format for when no template is selected
-    promptContent += `\n\nUSE THIS FORMAT STRUCTURE:
-    Total Marks: ${format.totalMarks}
-    Sections:
-    ${format.sections.map((section: any) =>
-      `- ${section.type} section (${section.marks} marks)`
-    ).join('\n')}`;
-  }
-
-  promptContent += `\n\nProvide the questions in this EXACT JSON format:
+  Format your response as a JSON object with this EXACT structure:
   {
     "questions": [
       {
@@ -93,73 +64,46 @@ export async function generateQuestions(
         "keyConcepts": ["string"],
         "studyResources": ["string"],
         "imageDescription": "string (optional)"
-      },
-      {
-        "type": "Theory|Numerical",
-        "text": "string",
-        "marks": number,
-        "expectedAnswer": "string",
-        "rubric": "string",
-        "section": "string",
-        "chapter": "string",
-        "topic": "string",
-        "keyConcepts": ["string"],
-        "studyResources": ["string"],
-        "imageDescription": "string (optional)"
       }
     ]
   }`;
 
   try {
+    console.log("Sending prompt to OpenAI");
     const response = await openai.chat.completions.create({
       model: "gpt-4",
-      messages: [{ role: "user", content: promptContent }],
+      messages: [
+        {
+          role: "system",
+          content: "You are an expert exam question generator. Always respond with valid JSON that matches the specified schema exactly."
+        },
+        {
+          role: "user",
+          content: promptContent
+        }
+      ],
       temperature: 0.7,
-      max_tokens: 2000
+      max_tokens: 2000,
+      response_format: { type: "json_object" }
     });
 
     if (!response.choices[0].message.content) {
       throw new Error("No content received from OpenAI");
     }
 
-    const parsedResponse = JSON.parse(response.choices[0].message.content);
+    console.log("Received response from OpenAI");
+    let parsedResponse;
+    try {
+      parsedResponse = JSON.parse(response.choices[0].message.content);
+      console.log("Successfully parsed OpenAI response");
+    } catch (parseError) {
+      console.error("Failed to parse OpenAI response:", parseError);
+      throw new Error("Invalid JSON response from OpenAI");
+    }
 
-    // Only validate template-specific requirements if a template is selected
-    if (selectedTemplate?.formatMetadata?.sections) {
-      const sections = selectedTemplate.formatMetadata.sections;
-      for (const section of sections) {
-        const questionsInSection = parsedResponse.questions.filter(
-          (q: any) => q.section === section.name
-        ).length;
-
-        if (questionsInSection !== section.questionCount) {
-          throw new Error(
-            `Invalid number of questions in section ${section.name}. Expected ${section.questionCount}, got ${questionsInSection}`
-          );
-        }
-
-        // Validate question types match the section requirements
-        const invalidTypeQuestions = parsedResponse.questions.filter(
-          (q: any) => q.section === section.name && q.type !== section.questionType
-        );
-
-        if (invalidTypeQuestions.length > 0) {
-          throw new Error(
-            `Invalid question types in section ${section.name}. All questions must be of type ${section.questionType}`
-          );
-        }
-
-        // Validate marks per question
-        const invalidMarksQuestions = parsedResponse.questions.filter(
-          (q: any) => q.section === section.name && q.marks !== section.marksPerQuestion
-        );
-
-        if (invalidMarksQuestions.length > 0) {
-          throw new Error(
-            `Invalid marks in section ${section.name}. All questions must be worth ${section.marksPerQuestion} marks`
-          );
-        }
-      }
+    if (!parsedResponse.questions || !Array.isArray(parsedResponse.questions)) {
+      console.error("Invalid response structure:", parsedResponse);
+      throw new Error("OpenAI response missing questions array");
     }
 
     // Validate required fields regardless of template
@@ -204,18 +148,18 @@ export async function evaluateAnswers(imageBase64: string, questions: any) {
     const evaluationPrompt = `
     Evaluate these exam questions and answers:
     Questions: ${JSON.stringify(questions)}
-
+    
     Consider:
     1. The accuracy and completeness of responses
     2. Understanding of core concepts
     3. Problem-solving approach
     4. Technical accuracy
-
+    
     For incorrect answers, provide:
     1. Specific study resources
     2. Common misconceptions
     3. Practice recommendations
-
+    
     Provide a detailed evaluation in this EXACT JSON format:
     {
       "score": number (0-100),
