@@ -1,6 +1,5 @@
 import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip, Legend, BarChart, Bar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from "recharts";
 import type { Attempt, Exam, EvaluationFeedback } from "@shared/schema";
 
@@ -23,7 +22,7 @@ export function PerformanceTrends({ attempts }: { attempts: AttemptWithExam[] })
   const subjectPerformanceData = useMemo(() => {
     const subjectScores = attempts.reduce((acc, attempt) => {
       if (attempt.score === null) return acc;
-      
+
       if (!acc[attempt.exam.subject]) {
         acc[attempt.exam.subject] = {
           scores: [],
@@ -31,11 +30,11 @@ export function PerformanceTrends({ attempts }: { attempts: AttemptWithExam[] })
           count: 0
         };
       }
-      
+
       acc[attempt.exam.subject].scores.push(attempt.score);
       acc[attempt.exam.subject].total += attempt.score;
       acc[attempt.exam.subject].count++;
-      
+
       return acc;
     }, {} as Record<string, { scores: number[], total: number, count: number }>);
 
@@ -49,10 +48,10 @@ export function PerformanceTrends({ attempts }: { attempts: AttemptWithExam[] })
   // Prepare data for concept mastery
   const conceptMasteryData = useMemo(() => {
     const conceptScores: Record<string, { total: number, count: number }> = {};
-    
+
     attempts.forEach(attempt => {
       if (!attempt.feedback) return;
-      
+
       const feedback = attempt.feedback as EvaluationFeedback;
       feedback.perQuestion.forEach(question => {
         question.keyConceptsCovered.forEach(concept => {
@@ -76,16 +75,6 @@ export function PerformanceTrends({ attempts }: { attempts: AttemptWithExam[] })
       .slice(0, 6); // Show top 6 concepts
   }, [attempts]);
 
-  const chartConfig = {
-    score: {
-      label: "Score",
-      theme: {
-        light: "hsl(var(--primary))",
-        dark: "hsl(var(--primary))"
-      }
-    }
-  };
-
   if (attempts.length === 0) return null;
 
   return (
@@ -96,29 +85,31 @@ export function PerformanceTrends({ attempts }: { attempts: AttemptWithExam[] })
           <CardTitle>Score Progression</CardTitle>
         </CardHeader>
         <CardContent>
-          <ChartContainer config={chartConfig} className="h-[300px]">
-            <LineChart data={scoreProgressData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" />
-              <YAxis domain={[0, 100]} />
-              <Tooltip content={({ active, payload }) => {
-                if (!active || !payload?.length) return null;
-                return (
-                  <div className="rounded-lg border bg-background p-2 shadow-sm">
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="font-medium">Date:</div>
-                      <div>{payload[0].payload.date}</div>
-                      <div className="font-medium">Score:</div>
-                      <div>{payload[0].value}%</div>
-                      <div className="font-medium">Subject:</div>
-                      <div>{payload[0].payload.subject}</div>
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={scoreProgressData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis domain={[0, 100]} />
+                <Tooltip content={({ active, payload }) => {
+                  if (!active || !payload?.length) return null;
+                  return (
+                    <div className="rounded-lg border bg-background p-2 shadow-sm">
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="font-medium">Date:</div>
+                        <div>{payload[0].payload.date}</div>
+                        <div className="font-medium">Score:</div>
+                        <div>{payload[0].value}%</div>
+                        <div className="font-medium">Subject:</div>
+                        <div>{payload[0].payload.subject}</div>
+                      </div>
                     </div>
-                  </div>
-                );
-              }} />
-              <Line type="monotone" dataKey="score" stroke="hsl(var(--primary))" strokeWidth={2} />
-            </LineChart>
-          </ChartContainer>
+                  );
+                }} />
+                <Line type="monotone" dataKey="score" stroke="hsl(var(--primary))" strokeWidth={2} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         </CardContent>
       </Card>
 
@@ -128,29 +119,31 @@ export function PerformanceTrends({ attempts }: { attempts: AttemptWithExam[] })
           <CardTitle>Subject Performance</CardTitle>
         </CardHeader>
         <CardContent>
-          <ChartContainer config={chartConfig} className="h-[300px]">
-            <BarChart data={subjectPerformanceData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="subject" />
-              <YAxis domain={[0, 100]} />
-              <Tooltip content={({ active, payload }) => {
-                if (!active || !payload?.length) return null;
-                return (
-                  <div className="rounded-lg border bg-background p-2 shadow-sm">
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="font-medium">Subject:</div>
-                      <div>{payload[0].payload.subject}</div>
-                      <div className="font-medium">Average Score:</div>
-                      <div>{payload[0].value}%</div>
-                      <div className="font-medium">Total Attempts:</div>
-                      <div>{payload[0].payload.attempts}</div>
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={subjectPerformanceData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="subject" />
+                <YAxis domain={[0, 100]} />
+                <Tooltip content={({ active, payload }) => {
+                  if (!active || !payload?.length) return null;
+                  return (
+                    <div className="rounded-lg border bg-background p-2 shadow-sm">
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="font-medium">Subject:</div>
+                        <div>{payload[0].payload.subject}</div>
+                        <div className="font-medium">Average Score:</div>
+                        <div>{payload[0].value}%</div>
+                        <div className="font-medium">Total Attempts:</div>
+                        <div>{payload[0].payload.attempts}</div>
+                      </div>
                     </div>
-                  </div>
-                );
-              }} />
-              <Bar dataKey="averageScore" fill="hsl(var(--primary))" />
-            </BarChart>
-          </ChartContainer>
+                  );
+                }} />
+                <Bar dataKey="averageScore" fill="hsl(var(--primary))" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </CardContent>
       </Card>
 
@@ -160,33 +153,35 @@ export function PerformanceTrends({ attempts }: { attempts: AttemptWithExam[] })
           <CardTitle>Concept Mastery</CardTitle>
         </CardHeader>
         <CardContent>
-          <ChartContainer config={chartConfig} className="h-[300px]">
-            <RadarChart data={conceptMasteryData}>
-              <PolarGrid />
-              <PolarAngleAxis dataKey="concept" />
-              <PolarRadiusAxis domain={[0, 100]} />
-              <Radar
-                name="Mastery Level"
-                dataKey="mastery"
-                fill="hsl(var(--primary))"
-                fillOpacity={0.2}
-                stroke="hsl(var(--primary))"
-              />
-              <Tooltip content={({ active, payload }) => {
-                if (!active || !payload?.length) return null;
-                return (
-                  <div className="rounded-lg border bg-background p-2 shadow-sm">
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="font-medium">Concept:</div>
-                      <div>{payload[0].payload.concept}</div>
-                      <div className="font-medium">Mastery:</div>
-                      <div>{payload[0].value}%</div>
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <RadarChart data={conceptMasteryData}>
+                <PolarGrid />
+                <PolarAngleAxis dataKey="concept" />
+                <PolarRadiusAxis domain={[0, 100]} />
+                <Radar
+                  name="Mastery Level"
+                  dataKey="mastery"
+                  fill="hsl(var(--primary))"
+                  fillOpacity={0.2}
+                  stroke="hsl(var(--primary))"
+                />
+                <Tooltip content={({ active, payload }) => {
+                  if (!active || !payload?.length) return null;
+                  return (
+                    <div className="rounded-lg border bg-background p-2 shadow-sm">
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="font-medium">Concept:</div>
+                        <div>{payload[0].payload.concept}</div>
+                        <div className="font-medium">Mastery:</div>
+                        <div>{payload[0].value}%</div>
+                      </div>
                     </div>
-                  </div>
-                );
-              }} />
-            </RadarChart>
-          </ChartContainer>
+                  );
+                }} />
+              </RadarChart>
+            </ResponsiveContainer>
+          </div>
         </CardContent>
       </Card>
     </div>
