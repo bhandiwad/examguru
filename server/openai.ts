@@ -60,50 +60,70 @@ export async function generateQuestions(
        - Test application in unfamiliar contexts`;
   }
 
-  let promptContent = `Generate an exam paper for ${subject} (${grade} grade) following ${curriculum} curriculum.
+  const formatInstructions = format.sections.map((section: any) => `
+    Generate ${Math.floor(section.marks / 10)} questions for the ${section.type} section worth 10 marks each.
+    For ${section.type} questions:
+    - Focus on ${section.type === 'theory' ? 'conceptual understanding and detailed explanations' : 'numerical problems and practical applications'}
+    - Include complex, multi-step problems
+    - Ensure detailed rubrics for evaluation
+  `).join('\n');
+
+  let promptContent = `Generate challenging exam questions for ${subject} (${grade} grade) following ${curriculum} curriculum.
   Difficulty level: ${difficulty}
-  Format: ${JSON.stringify(format)}
   ${chapters ? `Focus on these chapters/topics: ${chapters.join(", ")}` : ""}
 
   ${difficultyGuidelines}
 
+  Question Distribution:
+  ${formatInstructions}
+
   STRICT REQUIREMENTS:
-  1. Each question must be properly formatted and labeled
-  2. For MCQ type questions:
-     - Each MCQ MUST have exactly 4 choices labeled A, B, C, D
+  1. Each question must be properly formatted and include:
+     - Question text
+     - Marks (10 marks per question)
+     - Type (MCQ or Theory)
+     - Section name
+     - Chapter/topic
+     - Key concepts being tested
+     - Study resources
+
+  2. For MCQ questions:
+     - MUST have exactly 4 choices labeled A, B, C, D
      - Include the correct answer
      - For Hard difficulty: Make distractors very close to the correct answer
-  3. For diagrams:
-     - Only include simple, 2D diagrams for physics concepts (e.g., force diagrams, ray diagrams)
-     - Keep diagrams black and white, minimal design
+     - Each MCQ worth 10 marks
+
+  3. For theory questions:
+     - Include clear evaluation rubrics
+     - Specify expected answer components
+     - Each theory question worth 10 marks
+
+  4. For diagrams (if needed):
+     - Only include simple, 2D diagrams
+     - Keep black and white, minimal design
      - Focus on clarity and educational value
-  4. Each question must include:
-     - The specific chapter/topic it relates to
-     - The key concepts being tested
-     - Recommended study resources for this topic
-  5. Total marks must match the format specification
 
   Your response MUST be a valid JSON object with this exact structure:
   {
     "questions": [
       {
         "type": "MCQ",
-        "text": "string",
-        "marks": number,
+        "text": "question text",
+        "marks": 10,
         "choices": {
-          "A": "string",
-          "B": "string",
-          "C": "string",
-          "D": "string"
+          "A": "choice text",
+          "B": "choice text",
+          "C": "choice text",
+          "D": "choice text"
         },
         "correctAnswer": "A|B|C|D",
-        "rubric": "string",
-        "section": "string",
-        "chapter": "string",
-        "topic": "string",
-        "keyConcepts": ["string"],
-        "studyResources": ["string"],
-        "imageDescription": "string (optional)"
+        "rubric": "evaluation criteria",
+        "section": "theory|problems",
+        "chapter": "chapter name",
+        "topic": "specific topic",
+        "keyConcepts": ["concept1", "concept2"],
+        "studyResources": ["resource1", "resource2"],
+        "imageDescription": "optional"
       }
     ]
   }`;
@@ -115,7 +135,7 @@ export async function generateQuestions(
       messages: [
         {
           role: "system",
-          content: "You are an expert exam question generator specializing in creating challenging and thought-provoking questions. You must ALWAYS respond with a valid JSON object matching the specified schema exactly. Do not include any explanatory text outside the JSON structure."
+          content: "You are an expert exam question generator specializing in creating challenging questions. You must respond with a valid JSON object containing a questions array. Each question must follow the specified format exactly."
         },
         {
           role: "user",
@@ -140,20 +160,31 @@ export async function generateQuestions(
       throw new Error("Invalid JSON response from OpenAI");
     }
 
-    if (!parsedResponse.questions || !Array.isArray(parsedResponse.questions)) {
+    // Handle both direct questions array and nested sections format
+    let questions = parsedResponse.questions;
+    if (!questions && parsedResponse.sections) {
+      questions = parsedResponse.sections.flatMap((section: any) => section.questions || []);
+    }
+
+    if (!questions || !Array.isArray(questions)) {
       console.error("Invalid response structure:", parsedResponse);
       throw new Error("OpenAI response missing questions array");
     }
 
-    // Validate required fields regardless of template
-    for (const question of parsedResponse.questions) {
-      if (!question.chapter || !question.topic || !question.keyConcepts || !question.studyResources) {
-        throw new Error("Questions must include chapter, topic, key concepts, and study resources");
+    // Validate required fields
+    for (const question of questions) {
+      if (!question.type || !question.text || !question.marks || !question.section || 
+          !question.chapter || !question.topic || !question.keyConcepts || !question.studyResources) {
+        throw new Error("Questions must include all required fields");
+      }
+
+      if (question.type === "MCQ" && (!question.choices || !question.correctAnswer)) {
+        throw new Error("MCQ questions must include choices and correct answer");
       }
     }
 
     // Generate images for questions that need them
-    for (const question of parsedResponse.questions) {
+    for (const question of questions) {
       if (question.imageDescription) {
         try {
           const imageResponse = await openai.images.generate({
@@ -174,8 +205,7 @@ export async function generateQuestions(
       }
     }
 
-    console.log("Successfully generated questions:", parsedResponse);
-    return parsedResponse;
+    return { questions };
   } catch (error: any) {
     console.error("Error generating questions:", error);
     throw new Error(`Failed to generate questions: ${error.message}`);
