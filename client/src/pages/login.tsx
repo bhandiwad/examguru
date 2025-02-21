@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { loginWithGoogle, auth } from "@/lib/firebase";
+import { loginWithGoogle, handleAuthRedirect, auth } from "@/lib/firebase";
 import { FaGoogle } from "react-icons/fa";
 import { useToast } from "@/hooks/use-toast";
 
@@ -26,20 +26,44 @@ export default function Login() {
     };
   }, [setLocation]);
 
+  // Handle redirect result when user returns
+  useEffect(() => {
+    const checkRedirectResult = async () => {
+      try {
+        setIsLoading(true);
+        await handleAuthRedirect();
+      } catch (error: any) {
+        console.error("Redirect error:", error);
+        let errorMessage = "Could not sign in with Google. Please try again.";
+
+        if (error.code === 'auth/unauthorized-domain') {
+          errorMessage = "This domain is not authorized. Please ensure you've added it to Firebase console.";
+        }
+
+        toast({
+          title: "Login Failed",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkRedirectResult();
+  }, [toast]);
+
   const handleLogin = async () => {
     console.log("Login button clicked");
     setIsLoading(true);
     try {
       console.log("Starting Google sign-in process");
       await loginWithGoogle();
-      console.log("Google sign-in successful");
     } catch (error: any) {
       console.error("Login error:", error);
       let errorMessage = "Could not sign in with Google. Please try again.";
 
-      if (error.code === 'auth/popup-blocked') {
-        errorMessage = "Please allow popups for this website to sign in with Google.";
-      } else if (error.code === 'auth/unauthorized-domain') {
+      if (error.code === 'auth/unauthorized-domain') {
         errorMessage = "This domain is not authorized. Please ensure you've added it to Firebase console.";
       }
 
