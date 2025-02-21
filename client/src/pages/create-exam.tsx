@@ -15,55 +15,69 @@ import { apiRequest } from "@/lib/queryClient";
 const CURRICULA = ["ICSE", "CBSE", "Karnataka State Board"];
 const DIFFICULTIES = ["Easy", "Medium", "Hard"];
 
+const defaultFormat = {
+  totalMarks: 100,
+  sections: [
+    { type: "theory", marks: 60 },
+    { type: "problems", marks: 40 }
+  ]
+};
+
 export default function CreateExam() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
 
   const form = useForm({
-    resolver: zodResolver(insertExamSchema),
+    resolver: zodResolver(insertExamSchema.extend({
+      subject: insertExamSchema.shape.subject.min(1, "Subject is required"),
+      curriculum: insertExamSchema.shape.curriculum.min(1, "Curriculum is required"),
+      difficulty: insertExamSchema.shape.difficulty.min(1, "Difficulty is required")
+    })),
     defaultValues: {
       curriculum: "",
       subject: "",
       difficulty: "",
-      format: {
-        totalMarks: 100,
-        sections: [
-          { type: "theory", marks: 60 },
-          { type: "problems", marks: 40 }
-        ]
-      }
+      format: defaultFormat
     }
   });
 
   const createExam = useMutation({
     mutationFn: async (data: any) => {
-      setIsGenerating(true);
-      const response = await apiRequest("POST", "/api/exams", data);
-      return response.json();
+      console.log("Submitting exam data:", data);
+      const response = await apiRequest("POST", "/api/exams", {
+        ...data,
+        format: defaultFormat // Ensure format is always included
+      });
+      const result = await response.json();
+      console.log("Received response:", result);
+      return result;
     },
     onSuccess: () => {
       toast({
-        title: "Exam Created",
+        title: "Success",
         description: "Your exam has been generated successfully"
       });
       setLocation("/dashboard");
     },
     onError: (error: Error) => {
+      console.error("Error creating exam:", error);
       toast({
         title: "Error",
-        description: error.message,
+        description: error.message || "Failed to create exam. Please try again.",
         variant: "destructive"
       });
-    },
-    onSettled: () => setIsGenerating(false)
+    }
   });
 
   const onSubmit = async (data: any) => {
     try {
+      setIsGenerating(true);
       await createExam.mutateAsync(data);
     } catch (error) {
-      console.error("Failed to create exam:", error);
+      console.error("Form submission error:", error);
+    } finally {
+      setIsGenerating(false);
     }
   };
 
@@ -133,9 +147,19 @@ export default function CreateExam() {
                 )}
               />
 
-              <Button type="submit" className="w-full" disabled={isGenerating}>
+              <Button 
+                type="submit" 
+                className="w-full" 
+                disabled={isGenerating || !form.formState.isValid}
+              >
                 {isGenerating ? "Generating exam..." : "Generate Exam"}
               </Button>
+
+              {Object.keys(form.formState.errors).length > 0 && (
+                <p className="text-sm text-red-500 mt-2">
+                  Please fill in all required fields
+                </p>
+              )}
             </form>
           </Form>
         </CardContent>

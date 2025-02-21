@@ -4,6 +4,8 @@ import OpenAI from "openai";
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export async function generateQuestions(subject: string, curriculum: string, difficulty: string, format: any) {
+  console.log("Generating questions with params:", { subject, curriculum, difficulty, format });
+
   const prompt = `Generate an exam paper for ${subject} following ${curriculum} curriculum.
   Difficulty level: ${difficulty}
   Format: ${JSON.stringify(format)}
@@ -20,17 +22,24 @@ export async function generateQuestions(subject: string, curriculum: string, dif
     ]
   }`;
 
-  const response = await openai.chat.completions.create({
-    model: "gpt-4o",
-    messages: [{ role: "user", content: prompt }],
-    response_format: { type: "json_object" }
-  });
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [{ role: "user", content: prompt }],
+      response_format: { type: "json_object" }
+    });
 
-  if (!response.choices[0].message.content) {
-    throw new Error("Failed to generate questions");
+    if (!response.choices[0].message.content) {
+      throw new Error("No content received from OpenAI");
+    }
+
+    const parsedResponse = JSON.parse(response.choices[0].message.content);
+    console.log("Successfully generated questions:", parsedResponse);
+    return parsedResponse;
+  } catch (error: any) {
+    console.error("Error generating questions:", error);
+    throw new Error(`Failed to generate questions: ${error.message}`);
   }
-
-  return JSON.parse(response.choices[0].message.content);
 }
 
 export async function evaluateAnswers(imageText: string, questions: any) {
@@ -53,15 +62,22 @@ export async function evaluateAnswers(imageText: string, questions: any) {
     }
   }`;
 
-  const response = await openai.chat.completions.create({
-    model: "gpt-4o", 
-    messages: [{ role: "user", content: prompt }],
-    response_format: { type: "json_object" }
-  });
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o", 
+      messages: [{ role: "user", content: prompt }],
+      response_format: { type: "json_object" }
+    });
 
-  if (!response.choices[0].message.content) {
-    throw new Error("Failed to evaluate answers");
+    if (!response.choices[0].message.content) {
+      throw new Error("No content received from OpenAI");
+    }
+
+    const parsedResponse = JSON.parse(response.choices[0].message.content);
+    console.log("Successfully evaluated answers:", parsedResponse);
+    return parsedResponse;
+  } catch (error: any) {
+    console.error("Error evaluating answers:", error);
+    throw new Error(`Failed to evaluate answers: ${error.message}`);
   }
-
-  return JSON.parse(response.choices[0].message.content);
 }
