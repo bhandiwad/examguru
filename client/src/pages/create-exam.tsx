@@ -6,7 +6,6 @@ import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { insertExamSchema } from "@shared/schema";
@@ -16,12 +15,14 @@ import type { QuestionTemplate } from "@shared/schema";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 
-
 const CURRICULA = ["ICSE", "CBSE", "Karnataka State Board"];
 const DIFFICULTIES = ["Easy", "Medium", "Hard"];
 const GRADES = ["8", "9", "10", "11", "12"];
 
-// Example chapters by subject (you can expand this)
+// Define available subjects
+const SUBJECTS = ["Mathematics", "Physics", "Chemistry"];
+
+// Example chapters by subject
 const SUBJECT_CHAPTERS = {
   "Mathematics": [
     "Algebra",
@@ -56,7 +57,7 @@ type FormData = {
   difficulty: string;
   format: typeof defaultFormat;
   templateId?: number;
-  chapters: string[]; // New field for chapters
+  chapters: string[];
 };
 
 const defaultFormat = {
@@ -78,7 +79,7 @@ export default function CreateExam() {
     resolver: zodResolver(insertExamSchema),
     defaultValues: {
       curriculum: CURRICULA[0],
-      subject: "",
+      subject: SUBJECTS[0],
       grade: GRADES[2],
       difficulty: DIFFICULTIES[0],
       format: defaultFormat,
@@ -205,9 +206,18 @@ export default function CreateExam() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Subject</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. Mathematics" {...field} />
-                    </FormControl>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select subject" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {SUBJECTS.map((subject) => (
+                          <SelectItem key={subject} value={subject}>{subject}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -261,6 +271,41 @@ export default function CreateExam() {
 
               <FormField
                 control={form.control}
+                name="chapters"
+                render={({ field }) => (
+                  <FormItem className="space-y-4">
+                    <FormLabel>Chapters to Include</FormLabel>
+                    <div className="border rounded-lg p-4 space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        {availableChapters.map((chapter) => (
+                          <div key={chapter} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={chapter}
+                              checked={field.value?.includes(chapter)}
+                              onCheckedChange={(checked) => {
+                                const newValue = checked
+                                  ? [...(field.value || []), chapter]
+                                  : (field.value || []).filter((c) => c !== chapter);
+                                field.onChange(newValue);
+                              }}
+                            />
+                            <Label htmlFor={chapter}>{chapter}</Label>
+                          </div>
+                        ))}
+                      </div>
+                      {availableChapters.length === 0 && (
+                        <p className="text-sm text-muted-foreground text-center">
+                          Please select a subject to see available chapters
+                        </p>
+                      )}
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
                 name="templateId"
                 render={({ field }) => (
                   <FormItem>
@@ -291,34 +336,6 @@ export default function CreateExam() {
                         ))}
                       </SelectContent>
                     </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="chapters"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Chapters to Include</FormLabel>
-                    <div className="grid grid-cols-2 gap-4">
-                      {availableChapters.map((chapter) => (
-                        <div key={chapter} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={chapter}
-                            checked={field.value?.includes(chapter)}
-                            onCheckedChange={(checked) => {
-                              const newValue = checked
-                                ? [...(field.value || []), chapter]
-                                : (field.value || []).filter((c) => c !== chapter);
-                              field.onChange(newValue);
-                            }}
-                          />
-                          <Label htmlFor={chapter}>{chapter}</Label>
-                        </div>
-                      ))}
-                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
