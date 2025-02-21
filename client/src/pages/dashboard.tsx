@@ -1,9 +1,10 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { PlusCircle, Clock, FileText, BookOpen, Star, FilePlus } from "lucide-react";
-import type { Attempt, Exam } from "@shared/schema";
+import { PlusCircle, FilePlus } from "lucide-react";
+import type { Attempt, Exam, EvaluationFeedback } from "@shared/schema";
 import {
   Accordion,
   AccordionContent,
@@ -11,17 +12,11 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
 import {
   BookOpen as BookOpenIcon,
-  Brain,
   Clock as ClockIcon,
   FileText as FileTextIcon,
   Star as StarIcon,
-  TrendingUp,
-  CheckCircle,
-  XCircle,
-  AlertCircle,
 } from "lucide-react";
 
 type AttemptWithExam = Attempt & { exam: Exam };
@@ -140,17 +135,19 @@ export default function Dashboard() {
                             Detailed Evaluation
                           </AccordionTrigger>
                           <AccordionContent>
-                            {typeof attempt.feedback === 'object' && 'overall' in attempt.feedback ? (
+                            {attempt.feedback && (
                               <div className="space-y-4 text-sm">
                                 <div>
                                   <h4 className="font-medium mb-2">Overview</h4>
-                                  <p className="text-gray-600">{attempt.feedback.overall.summary}</p>
+                                  <p className="text-gray-600">
+                                    {(attempt.feedback as EvaluationFeedback).overall.summary}
+                                  </p>
                                 </div>
 
                                 <div>
                                   <h4 className="font-medium mb-2">Strengths</h4>
                                   <ul className="list-disc pl-4 space-y-1">
-                                    {attempt.feedback.overall.strengths.map((strength, i) => (
+                                    {(attempt.feedback as EvaluationFeedback).overall.strengths.map((strength: string, i: number) => (
                                       <li key={i} className="text-gray-600">{strength}</li>
                                     ))}
                                   </ul>
@@ -159,7 +156,7 @@ export default function Dashboard() {
                                 <div>
                                   <h4 className="font-medium mb-2">Areas for Improvement</h4>
                                   <ul className="list-disc pl-4 space-y-1">
-                                    {attempt.feedback.overall.areas_for_improvement.map((area, i) => (
+                                    {(attempt.feedback as EvaluationFeedback).overall.areas_for_improvement.map((area: string, i: number) => (
                                       <li key={i} className="text-gray-600">{area}</li>
                                     ))}
                                   </ul>
@@ -168,7 +165,7 @@ export default function Dashboard() {
                                 <div>
                                   <h4 className="font-medium mb-2">Learning Recommendations</h4>
                                   <ul className="list-disc pl-4 space-y-1">
-                                    {attempt.feedback.overall.learning_recommendations.map((rec, i) => (
+                                    {(attempt.feedback as EvaluationFeedback).overall.learning_recommendations.map((rec: string, i: number) => (
                                       <li key={i} className="text-gray-600">{rec}</li>
                                     ))}
                                   </ul>
@@ -179,29 +176,25 @@ export default function Dashboard() {
                                   <div className="grid grid-cols-3 gap-2 mt-2">
                                     <div className="text-center p-2 bg-secondary/10 rounded">
                                       <div className="text-2xl font-bold text-primary">
-                                        {attempt.feedback.performanceAnalytics.difficultyAnalysis.easy}%
+                                        {(attempt.feedback as EvaluationFeedback).performanceAnalytics.difficultyAnalysis.easy}%
                                       </div>
                                       <div className="text-xs text-gray-500">Easy Questions</div>
                                     </div>
                                     <div className="text-center p-2 bg-secondary/10 rounded">
                                       <div className="text-2xl font-bold text-primary">
-                                        {attempt.feedback.performanceAnalytics.difficultyAnalysis.medium}%
+                                        {(attempt.feedback as EvaluationFeedback).performanceAnalytics.difficultyAnalysis.medium}%
                                       </div>
                                       <div className="text-xs text-gray-500">Medium Questions</div>
                                     </div>
                                     <div className="text-center p-2 bg-secondary/10 rounded">
                                       <div className="text-2xl font-bold text-primary">
-                                        {attempt.feedback.performanceAnalytics.difficultyAnalysis.hard}%
+                                        {(attempt.feedback as EvaluationFeedback).performanceAnalytics.difficultyAnalysis.hard}%
                                       </div>
                                       <div className="text-xs text-gray-500">Hard Questions</div>
                                     </div>
                                   </div>
                                 </div>
                               </div>
-                            ) : (
-                              <p className="text-sm text-gray-600">
-                                Detailed feedback not available for this attempt.
-                              </p>
                             )}
                           </AccordionContent>
                         </AccordionItem>

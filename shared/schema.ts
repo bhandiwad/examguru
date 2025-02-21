@@ -31,7 +31,7 @@ export const exams = pgTable("exams", {
   difficulty: text("difficulty").notNull(),
   format: jsonb("format").notNull(),
   questions: jsonb("questions").notNull(),
-  templateId: integer("template_id"), // Reference to the template used
+  templateId: integer("template_id"), 
   createdAt: timestamp("created_at").notNull().defaultNow()
 });
 
@@ -89,6 +89,43 @@ export const insertExamSchema = z.object({
   templateId: z.number().optional()
 });
 
+// Define the feedback structure for the advanced AI evaluation system
+const evaluationFeedbackSchema = z.object({
+  overall: z.object({
+    summary: z.string(),
+    strengths: z.array(z.string()),
+    areas_for_improvement: z.array(z.string()),
+    learning_recommendations: z.array(z.string())
+  }),
+  perQuestion: z.array(z.object({
+    questionNumber: z.number(),
+    score: z.number(),
+    conceptualUnderstanding: z.object({
+      level: z.enum(["Excellent", "Good", "Fair", "Needs Improvement"]),
+      details: z.string()
+    }),
+    technicalAccuracy: z.object({
+      score: z.number(),
+      details: z.string()
+    }),
+    keyConceptsCovered: z.array(z.string()),
+    misconceptions: z.array(z.string()),
+    improvementAreas: z.array(z.string()),
+    exemplarAnswer: z.string()
+  })),
+  performanceAnalytics: z.object({
+    conceptualStrengths: z.array(z.string()),
+    technicalStrengths: z.array(z.string()),
+    learningPatterns: z.array(z.string()),
+    recommendedTopics: z.array(z.string()),
+    difficultyAnalysis: z.object({
+      easy: z.number(),
+      medium: z.number(),
+      hard: z.number()
+    })
+  })
+});
+
 export const insertAttemptSchema = z.object({
   examId: z.number().int().min(1, "Exam ID is required"),
   userId: z.number().int().min(1, "User ID is required"),
@@ -96,9 +133,10 @@ export const insertAttemptSchema = z.object({
   endTime: z.date().optional(),
   answerImageUrl: z.string().optional(),
   score: z.number().int().optional(),
-  feedback: z.any().optional()
+  feedback: evaluationFeedbackSchema.optional()
 });
 
+// Export types
 export type User = typeof users.$inferSelect;
 export type Exam = typeof exams.$inferSelect;
 export type Attempt = typeof attempts.$inferSelect;
@@ -107,3 +145,4 @@ export type InsertUser = typeof users.$inferInsert;
 export type InsertExam = z.infer<typeof insertExamSchema>;
 export type InsertAttempt = z.infer<typeof insertAttemptSchema>;
 export type InsertQuestionTemplate = z.infer<typeof insertQuestionTemplateSchema>;
+export type EvaluationFeedback = z.infer<typeof evaluationFeedbackSchema>;
