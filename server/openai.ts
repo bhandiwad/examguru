@@ -10,7 +10,7 @@ export async function generateQuestions(
   format: any,
   templates: any[],
   selectedTemplate?: any,
-  chapters?: string[] 
+  chapters?: string[]
 ) {
   console.log("Generating questions with params:", {
     subject,
@@ -29,21 +29,21 @@ export async function generateQuestions(
   ${chapters ? `Focus on these chapters/topics: ${chapters.join(", ")}` : ""}
 
   STRICT REQUIREMENTS:
-  1. You MUST follow the exact section structure and question count from the template
-  2. Each section must contain EXACTLY the number of questions specified in the template
-  3. For MCQ type questions:
+  1. Each question must be properly formatted and labeled
+  2. For MCQ type questions:
      - Each MCQ MUST have exactly 4 choices labeled A, B, C, D
      - Include the correct answer
-  4. For diagrams:
+  3. For diagrams:
      - Only include simple, 2D diagrams for physics concepts (e.g., force diagrams, ray diagrams)
      - Keep diagrams black and white, minimal design
      - Focus on clarity and educational value
-  5. Each question must include:
+  4. Each question must include:
      - The specific chapter/topic it relates to
      - The key concepts being tested
      - Recommended study resources for this topic
-  6. The total marks must exactly match the template specification`;
+  5. Total marks must match the format specification`;
 
+  // Add template-specific requirements if a template is selected
   if (selectedTemplate) {
     const sections = selectedTemplate.formatMetadata.sections;
     const sectionRequirements = sections.map(section =>
@@ -57,18 +57,22 @@ export async function generateQuestions(
     promptContent += `\n\nUSE THIS EXACT TEMPLATE FORMAT:
     Institution: ${selectedTemplate.institution}
     Paper Format: ${selectedTemplate.paperFormat}
-    
+
     SECTION REQUIREMENTS:
     ${sectionRequirements}
-    
-    Format Details: ${JSON.stringify(selectedTemplate.formatMetadata, null, 2)}
-    Sample Structure: ${JSON.stringify(selectedTemplate.template, null, 2)}`;
+
+    Format Details: ${JSON.stringify(selectedTemplate.formatMetadata, null, 2)}`;
+  } else {
+    // Default format for when no template is selected
+    promptContent += `\n\nUSE THIS FORMAT STRUCTURE:
+    Total Marks: ${format.totalMarks}
+    Sections:
+    ${format.sections.map((section: any) =>
+      `- ${section.type} section (${section.marks} marks)`
+    ).join('\n')}`;
   }
 
-  promptContent += `\n\nUse these curriculum-specific templates as guidelines:
-  ${JSON.stringify(templates, null, 2)}
-  
-  Provide the questions in this EXACT JSON format:
+  promptContent += `\n\nProvide the questions in this EXACT JSON format:
   {
     "questions": [
       {
@@ -120,47 +124,45 @@ export async function generateQuestions(
 
     const parsedResponse = JSON.parse(response.choices[0].message.content);
 
-    // Validate question count and structure
-    if (!selectedTemplate?.formatMetadata?.sections) {
-      throw new Error("Template sections not properly defined");
-    }
+    // Only validate template-specific requirements if a template is selected
+    if (selectedTemplate?.formatMetadata?.sections) {
+      const sections = selectedTemplate.formatMetadata.sections;
+      for (const section of sections) {
+        const questionsInSection = parsedResponse.questions.filter(
+          (q: any) => q.section === section.name
+        ).length;
 
-    const sections = selectedTemplate.formatMetadata.sections;
-    for (const section of sections) {
-      const questionsInSection = parsedResponse.questions.filter(
-        (q: any) => q.section === section.name
-      ).length;
+        if (questionsInSection !== section.questionCount) {
+          throw new Error(
+            `Invalid number of questions in section ${section.name}. Expected ${section.questionCount}, got ${questionsInSection}`
+          );
+        }
 
-      if (questionsInSection !== section.questionCount) {
-        throw new Error(
-          `Invalid number of questions in section ${section.name}. Expected ${section.questionCount}, got ${questionsInSection}`
+        // Validate question types match the section requirements
+        const invalidTypeQuestions = parsedResponse.questions.filter(
+          (q: any) => q.section === section.name && q.type !== section.questionType
         );
-      }
 
-      // Validate question types match the section requirements
-      const invalidTypeQuestions = parsedResponse.questions.filter(
-        (q: any) => q.section === section.name && q.type !== section.questionType
-      );
+        if (invalidTypeQuestions.length > 0) {
+          throw new Error(
+            `Invalid question types in section ${section.name}. All questions must be of type ${section.questionType}`
+          );
+        }
 
-      if (invalidTypeQuestions.length > 0) {
-        throw new Error(
-          `Invalid question types in section ${section.name}. All questions must be of type ${section.questionType}`
+        // Validate marks per question
+        const invalidMarksQuestions = parsedResponse.questions.filter(
+          (q: any) => q.section === section.name && q.marks !== section.marksPerQuestion
         );
-      }
 
-      // Validate marks per question
-      const invalidMarksQuestions = parsedResponse.questions.filter(
-        (q: any) => q.section === section.name && q.marks !== section.marksPerQuestion
-      );
-
-      if (invalidMarksQuestions.length > 0) {
-        throw new Error(
-          `Invalid marks in section ${section.name}. All questions must be worth ${section.marksPerQuestion} marks`
-        );
+        if (invalidMarksQuestions.length > 0) {
+          throw new Error(
+            `Invalid marks in section ${section.name}. All questions must be worth ${section.marksPerQuestion} marks`
+          );
+        }
       }
     }
 
-    // Add validation for new fields
+    // Validate required fields regardless of template
     for (const question of parsedResponse.questions) {
       if (!question.chapter || !question.topic || !question.keyConcepts || !question.studyResources) {
         throw new Error("Questions must include chapter, topic, key concepts, and study resources");
@@ -266,13 +268,13 @@ export async function evaluateAnswers(imageBase64: string, questions: any) {
     const evaluationResponse = await openai.chat.completions.create({
       model: "gpt-4",
       messages: [
-        { 
-          role: "system", 
-          content: "You are an expert exam evaluator. Provide detailed feedback focusing on exam-specific concepts and methodologies." 
+        {
+          role: "system",
+          content: "You are an expert exam evaluator. Provide detailed feedback focusing on exam-specific concepts and methodologies."
         },
-        { 
-          role: "user", 
-          content: evaluationPrompt 
+        {
+          role: "user",
+          content: evaluationPrompt
         }
       ],
       temperature: 0.3,
@@ -296,7 +298,7 @@ export async function evaluateAnswers(imageBase64: string, questions: any) {
 
     // Provide a basic fallback evaluation
     const totalMarks = questions.reduce((sum: number, q: any) => sum + q.marks, 0);
-    const estimatedScore = Math.floor(Math.random() * 30) + 40; 
+    const estimatedScore = Math.floor(Math.random() * 30) + 40;
 
     return {
       score: estimatedScore,
