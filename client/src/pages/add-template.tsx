@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { insertQuestionTemplateSchema } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Upload } from "lucide-react";
+import { PageHeader } from "@/components/ui/page-header";
 
 const CURRICULA = ["ICSE", "CBSE", "Karnataka State Board"];
 const GRADES = ["8", "9", "10", "11", "12"];
@@ -137,9 +138,9 @@ export default function AddTemplate() {
 
   return (
     <div className="container mx-auto py-8 max-w-2xl">
+      <PageHeader title="Add Question Paper Template" />
       <Card className="mb-4">
         <CardHeader>
-          <CardTitle>Quick Template Creation</CardTitle>
           <CardDescription>
             Upload a previous year's question paper to automatically extract its format
           </CardDescription>
@@ -169,12 +170,6 @@ export default function AddTemplate() {
         </CardContent>
       </Card>
       <Card>
-        <CardHeader>
-          <CardTitle>Add Question Paper Template</CardTitle>
-          <CardDescription>
-            Create a new template for your institution's exam paper format
-          </CardDescription>
-        </CardHeader>
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit((data) => createTemplate.mutate(data))} className="space-y-4">
