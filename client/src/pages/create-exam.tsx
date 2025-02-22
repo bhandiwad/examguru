@@ -15,13 +15,99 @@ import type { QuestionTemplate } from "@shared/schema";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 
-const CURRICULA = ["ICSE", "CBSE", "Karnataka State Board"];
-const DIFFICULTIES = ["Easy", "Medium", "Hard"];
-const GRADES = ["8", "9", "10", "11", "12"];
-const SUBJECTS = ["Mathematics", "Physics", "Chemistry"];
+const CURRICULA = [
+  "ICSE", 
+  "CBSE", 
+  "Karnataka State Board",
+  "JEE (Main)",
+  "JEE (Advanced)",
+  "NEET",
+  "KVPY",
+  "BITSAT"
+];
 
-// Detailed chapter information by curriculum, grade, and subject
+const DIFFICULTIES = ["Easy", "Medium", "Hard"];
+const GRADES = ["8", "9", "10", "11", "12", "Competitive"];
+
+// Subject combinations for different curricula
+const CURRICULUM_SUBJECTS = {
+  "JEE (Main)": ["Physics", "Chemistry", "Mathematics"],
+  "JEE (Advanced)": ["Physics", "Chemistry", "Mathematics"],
+  "NEET": ["Physics", "Chemistry", "Biology"],
+  "KVPY": ["Physics", "Chemistry", "Mathematics", "Biology"],
+  "BITSAT": ["Physics", "Chemistry", "Mathematics", "English", "Logical Reasoning"],
+  "ICSE": ["Mathematics", "Physics", "Chemistry"],
+  "CBSE": ["Mathematics", "Physics", "Chemistry"],
+  "Karnataka State Board": ["Mathematics", "Physics", "Chemistry"]
+};
+
+// Detailed chapter information by curriculum and subject
 const TEXTBOOK_CHAPTERS = {
+  "JEE (Main)": {
+    "Physics": {
+      title: "JEE Main Physics",
+      chapters: [
+        "Kinematics",
+        "Laws of Motion",
+        "Work, Energy and Power",
+        "Rotational Motion",
+        "Gravitation",
+        "Properties of Matter",
+        "Thermodynamics",
+        "Kinetic Theory of Gases",
+        "Oscillations and Waves",
+        "Electrostatics",
+        "Current Electricity",
+        "Magnetic Effects of Current",
+        "Magnetism",
+        "Electromagnetic Induction",
+        "Optics",
+        "Modern Physics",
+        "Semiconductor Electronics"
+      ]
+    },
+    "Chemistry": {
+      title: "JEE Main Chemistry",
+      chapters: [
+        "Atomic Structure",
+        "Chemical Bonding",
+        "States of Matter",
+        "Thermodynamics",
+        "Chemical Equilibrium",
+        "Solutions",
+        "Electrochemistry",
+        "Chemical Kinetics",
+        "Surface Chemistry",
+        "Periodic Table",
+        "Organic Chemistry Basics",
+        "Hydrocarbons",
+        "Organic Compounds with Functional Groups",
+        "Biomolecules",
+        "Polymers",
+        "Chemistry in Everyday Life"
+      ]
+    },
+    "Mathematics": {
+      title: "JEE Main Mathematics",
+      chapters: [
+        "Sets and Functions",
+        "Complex Numbers",
+        "Matrices and Determinants",
+        "Permutations and Combinations",
+        "Mathematical Induction",
+        "Binomial Theorem",
+        "Sequences and Series",
+        "Limits and Derivatives",
+        "Integral Calculus",
+        "Differential Equations",
+        "Coordinate Geometry",
+        "Vectors and 3D Geometry",
+        "Statistics and Probability",
+        "Trigonometry",
+        "Mathematical Reasoning"
+      ]
+    }
+  },
   "ICSE": {
     "8": {
       "Mathematics": {
@@ -80,9 +166,7 @@ const TEXTBOOK_CHAPTERS = {
         ]
       }
     }
-    // Add other grades here...
   }
-  // Add other curricula here...
 };
 
 type FormData = {
@@ -109,6 +193,7 @@ export default function CreateExam() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [selectedInstitution, setSelectedInstitution] = useState<string>("");
   const [availableChapters, setAvailableChapters] = useState<string[]>([]);
+  const [availableSubjects, setAvailableSubjects] = useState<string[]>([]);
   const [textbookInfo, setTextbookInfo] = useState<{
     title?: string;
     author?: string;
@@ -119,7 +204,7 @@ export default function CreateExam() {
     resolver: zodResolver(insertExamSchema),
     defaultValues: {
       curriculum: CURRICULA[0],
-      subject: SUBJECTS[0],
+      subject: CURRICULUM_SUBJECTS[CURRICULA[0] as keyof typeof CURRICULUM_SUBJECTS][0],
       grade: GRADES[0],
       difficulty: DIFFICULTIES[0],
       format: defaultFormat,
@@ -127,20 +212,37 @@ export default function CreateExam() {
     }
   });
 
+  // Update available subjects when curriculum changes
+  useEffect(() => {
+    const curriculum = form.watch("curriculum");
+    const subjects = CURRICULUM_SUBJECTS[curriculum as keyof typeof CURRICULUM_SUBJECTS] || CURRICULUM_SUBJECTS["ICSE"];
+    setAvailableSubjects(subjects);
+
+    // Reset subject if not available in new curriculum
+    if (!subjects.includes(form.watch("subject"))) {
+      form.setValue("subject", subjects[0]);
+    }
+  }, [form.watch("curriculum")]);
+
   // Watch for changes in curriculum, grade, and subject to update available chapters
   useEffect(() => {
     const curriculum = form.watch("curriculum");
     const grade = form.watch("grade");
     const subject = form.watch("subject");
 
-    const textbookData = TEXTBOOK_CHAPTERS[curriculum as keyof typeof TEXTBOOK_CHAPTERS]?.[grade as keyof typeof TEXTBOOK_CHAPTERS["ICSE"]]?.[subject as keyof typeof TEXTBOOK_CHAPTERS["ICSE"]["8"]];
+    let chaptersData;
+    if (["JEE (Main)", "JEE (Advanced)", "NEET", "KVPY", "BITSAT"].includes(curriculum)) {
+      chaptersData = TEXTBOOK_CHAPTERS[curriculum as keyof typeof TEXTBOOK_CHAPTERS]?.[subject as keyof typeof TEXTBOOK_CHAPTERS["JEE (Main)"]];
+    } else {
+      chaptersData = TEXTBOOK_CHAPTERS[curriculum as keyof typeof TEXTBOOK_CHAPTERS]?.[grade as keyof typeof TEXTBOOK_CHAPTERS["ICSE"]]?.[subject as keyof typeof TEXTBOOK_CHAPTERS["ICSE"]["8"]];
+    }
 
-    if (textbookData) {
-      setAvailableChapters(textbookData.chapters);
+    if (chaptersData) {
+      setAvailableChapters(chaptersData.chapters);
       setTextbookInfo({
-        title: textbookData.title,
-        author: textbookData.author,
-        publisher: textbookData.publisher
+        title: chaptersData.title,
+        author: chaptersData.author,
+        publisher: chaptersData.publisher
       });
     } else {
       setAvailableChapters([]);
@@ -267,7 +369,7 @@ export default function CreateExam() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {SUBJECTS.map((subject) => (
+                        {availableSubjects.map((subject) => (
                           <SelectItem key={subject} value={subject}>{subject}</SelectItem>
                         ))}
                       </SelectContent>
