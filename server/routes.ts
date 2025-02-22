@@ -448,8 +448,12 @@ export async function registerRoutes(app: Express) {
         return res.status(400).json({ message: "Invalid exam ID" });
       }
 
-      if (!["Easy", "Medium", "Hard"].includes(newDifficulty)) {
-        return res.status(400).json({ message: "Invalid difficulty level" });
+      const validDifficulties = ["Beginner", "Foundation", "Easy", "Medium", "Advanced", "Hard", "Expert", "Olympiad"];
+      if (!validDifficulties.includes(newDifficulty)) {
+        return res.status(400).json({ 
+          message: "Invalid difficulty level",
+          validLevels: validDifficulties
+        });
       }
 
       // Get the original exam

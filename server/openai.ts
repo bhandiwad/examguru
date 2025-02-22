@@ -24,40 +24,79 @@ export async function generateQuestions(
   });
 
   let difficultyGuidelines = "";
-  if (difficulty === "Hard") {
-    difficultyGuidelines = `
-    Since difficulty level is HARD, ensure questions are genuinely challenging:
-    1. Complex Problem-Solving:
-       - Multi-step problems requiring multiple concepts
-       - Application of concepts in non-standard situations
-       - Problems requiring deep analytical thinking
-
-    2. Advanced Concepts:
-       - Questions that combine multiple chapters/topics
-       - Problems requiring thorough understanding of prerequisites
-       - Higher-order thinking questions (analysis, evaluation, creation)
-
-    3. Specific Requirements by Subject:
-       For Mathematics:
-       - Complex word problems requiring multiple mathematical concepts
-       - Problems involving proof and mathematical reasoning
-       - Questions requiring creative problem-solving approaches
-
-       For Physics:
-       - Complex numerical problems with multiple concepts
-       - Advanced theoretical questions
-       - Real-world applications with multiple variables
-
-       For Chemistry:
-       - Complex reaction mechanisms
-       - Multi-step stoichiometry problems
-       - Advanced theoretical concepts
-
-    4. Question Characteristics:
-       - Include tricky edge cases
-       - Require deep conceptual understanding
-       - Challenge common misconceptions
-       - Test application in unfamiliar contexts`;
+  switch (difficulty) {
+    case "Beginner":
+      difficultyGuidelines = `
+      Focus on foundational concepts:
+      1. Basic definitions and terminology
+      2. Simple, direct questions
+      3. Clear, straightforward language
+      4. Single-concept problems
+      5. Step-by-step solutions`;
+      break;
+    case "Foundation":
+      difficultyGuidelines = `
+      Build core understanding:
+      1. Basic concept applications
+      2. Simple problem-solving
+      3. Clear examples
+      4. Fundamental principles
+      5. Standard textbook-style questions`;
+      break;
+    case "Easy":
+      difficultyGuidelines = `
+      Reinforce learning:
+      1. Direct application of concepts
+      2. Simple multi-step problems
+      3. Clear context
+      4. Basic analytical thinking
+      5. Standard problem formats`;
+      break;
+    case "Medium":
+      difficultyGuidelines = `
+      Challenge understanding:
+      1. Combined concept application
+      2. Moderate complexity
+      3. Some analytical thinking
+      4. Real-world applications
+      5. Multi-step problems`;
+      break;
+    case "Advanced":
+      difficultyGuidelines = `
+      Test deeper understanding:
+      1. Complex problem-solving
+      2. Multiple concept integration
+      3. Advanced applications
+      4. Higher-order thinking
+      5. Competitive exam style questions`;
+      break;
+    case "Hard":
+      difficultyGuidelines = `
+      Push boundaries:
+      1. Complex multi-step problems
+      2. Multiple concept integration
+      3. Advanced analytical thinking
+      4. Challenging applications
+      5. Previous year competitive questions`;
+      break;
+    case "Expert":
+      difficultyGuidelines = `
+      Challenge mastery:
+      1. Advanced problem-solving techniques
+      2. Complex theoretical applications
+      3. Deep conceptual understanding
+      4. Multiple solution approaches
+      5. Previous year advanced problems`;
+      break;
+    case "Olympiad":
+      difficultyGuidelines = `
+      Test exceptional ability:
+      1. Olympiad-level complexity
+      2. Novel problem-solving approaches
+      3. Creative thinking requirements
+      4. Research-level concepts
+      5. International Olympiad style`;
+      break;
   }
 
   const formatInstructions = format.sections.map((section: any) => `
