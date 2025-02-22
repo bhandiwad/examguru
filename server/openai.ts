@@ -514,7 +514,8 @@ export async function adjustQuestionDifficulty(
   5. Maintain MCQ format for MCQ questions
   6. Keep the same number of questions
 
-  Return a valid JSON array with the same structure as the input questions.`;
+  IMPORTANT: Your response must be ONLY valid JSON in this format:
+  {"questions": [...array of adjusted questions with same structure as input...]}`;
 
   try {
     const response = await openai.chat.completions.create({
@@ -522,14 +523,13 @@ export async function adjustQuestionDifficulty(
       messages: [
         {
           role: "system",
-          content: "You are an expert exam question generator specializing in adapting question difficulty while maintaining educational value."
+          content: "You are an expert exam question generator specializing in adapting question difficulty while maintaining educational value. You must respond with valid JSON only."
         },
         {
           role: "user",
           content: prompt
         }
       ],
-      response_format: { type: "json_object" },
       temperature: 0.7
     });
 
@@ -539,6 +539,10 @@ export async function adjustQuestionDifficulty(
 
     const adjustedQuestions = JSON.parse(response.choices[0].message.content);
     console.log("Successfully adjusted questions difficulty");
+
+    if (!adjustedQuestions.questions || !Array.isArray(adjustedQuestions.questions)) {
+      throw new Error("Invalid response format from OpenAI");
+    }
 
     return adjustedQuestions.questions;
   } catch (error: any) {
