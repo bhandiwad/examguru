@@ -13,6 +13,7 @@ export interface IStorage {
   createAttempt(attempt: InsertAttempt): Promise<Attempt>;
   // Enhanced template methods
   createTemplate(template: InsertQuestionTemplate): Promise<QuestionTemplate>;
+  updateTemplate(id: number, template: InsertQuestionTemplate): Promise<QuestionTemplate>;
   getTemplates(params: {
     curriculum?: string;
     subject?: string;
@@ -117,6 +118,18 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     return newTemplate;
+  }
+
+  async updateTemplate(id: number, template: InsertQuestionTemplate): Promise<QuestionTemplate> {
+    const [updatedTemplate] = await db
+      .update(questionTemplates)
+      .set({
+        ...template,
+        updatedAt: new Date()
+      })
+      .where(eq(questionTemplates.id, id))
+      .returning();
+    return updatedTemplate;
   }
 
   async getTemplates(params: {

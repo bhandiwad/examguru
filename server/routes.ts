@@ -15,6 +15,50 @@ const upload = multer({
 
 export async function registerRoutes(app: Express) {
   // Template management routes
+  app.get("/api/templates", async (req, res) => {
+    try {
+      const templates = await storage.getTemplates({});
+      res.json(templates);
+    } catch (error: any) {
+      console.error("Error fetching templates:", error);
+      res.status(500).json({
+        message: "Failed to fetch templates",
+        error: error.message
+      });
+    }
+  });
+
+  app.patch("/api/templates/:id", async (req, res) => {
+    try {
+      const templateId = parseInt(req.params.id);
+      if (isNaN(templateId)) {
+        return res.status(400).json({ message: "Invalid template ID" });
+      }
+
+      const validation = insertQuestionTemplateSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({
+          message: "Invalid template data",
+          errors: validation.error.errors
+        });
+      }
+
+      const existingTemplate = await storage.getTemplateById(templateId);
+      if (!existingTemplate) {
+        return res.status(404).json({ message: "Template not found" });
+      }
+
+      const updatedTemplate = await storage.updateTemplate(templateId, validation.data);
+      res.json(updatedTemplate);
+    } catch (error: any) {
+      console.error("Error updating template:", error);
+      res.status(500).json({
+        message: "Failed to update template",
+        error: error.message
+      });
+    }
+  });
+
   app.get("/api/templates/search", async (req, res) => {
     try {
       const { curriculum, subject, grade, institution, paperFormat } = req.query;
