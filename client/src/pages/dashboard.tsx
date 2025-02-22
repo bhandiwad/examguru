@@ -21,7 +21,7 @@ import {
   SheetPortal,
 } from "@/components/ui/sheet";
 import { SUBJECTS, GRADES, DIFFICULTIES } from "@shared/constants";
-import type { Attempt, Exam, EvaluationFeedback } from "@shared/schema";
+import type { Attempt, Exam } from "@shared/schema";
 import { PerformanceTrends } from "@/components/PerformanceTrends";
 import { AchievementDisplay } from "@/components/AchievementDisplay";
 import { PageHeader } from "@/components/ui/page-header";
@@ -114,6 +114,7 @@ export default function Dashboard() {
   const [selectedGrade, setSelectedGrade] = useState<string>("");
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
 
   const { data: attempts, isLoading: attemptsLoading } = useQuery<AttemptWithExam[]>({
     queryKey: ["/api/attempts"]
@@ -147,7 +148,7 @@ export default function Dashboard() {
       <div className="flex justify-between items-center mb-8">
         <PageHeader title="Your Exams" />
         <div className="flex gap-4">
-          <Sheet>
+          <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
             <SheetTrigger asChild>
               <Button variant="outline">
                 <Filter className="mr-2 h-4 w-4" />
@@ -155,8 +156,8 @@ export default function Dashboard() {
               </Button>
             </SheetTrigger>
             <SheetPortal>
-              <SheetContent>
-                <SheetHeader>
+              <SheetContent className="w-[400px] sm:w-[540px]" side="right">
+                <SheetHeader className="mb-4">
                   <SheetTitle>Filter Exams</SheetTitle>
                   <SheetDescription>
                     Filter exams by subject, grade, and difficulty level.
@@ -386,67 +387,67 @@ export default function Dashboard() {
                           <AccordionContent>
                             {attempt.feedback && (
                               <div className="space-y-6 text-sm">
-                                {(attempt.feedback as EvaluationFeedback).overall && (
+                                {(attempt.feedback as any).overall && (
                                   <>
                                     <div>
                                       <h4 className="font-medium mb-2">Overview</h4>
                                       <p className="text-gray-600">
-                                        {(attempt.feedback as EvaluationFeedback).overall.summary}
+                                        {(attempt.feedback as any).overall.summary}
                                       </p>
                                     </div>
 
-                                    {(attempt.feedback as EvaluationFeedback).overall.strengths?.length > 0 && (
+                                    {(attempt.feedback as any).overall.strengths?.length > 0 && (
                                       <div>
                                         <h4 className="font-medium mb-2">Strengths</h4>
                                         <ul className="list-disc pl-4 space-y-1">
-                                          {(attempt.feedback as EvaluationFeedback).overall.strengths.map((strength, i) => (
+                                          {(attempt.feedback as any).overall.strengths.map((strength, i) => (
                                             <li key={i} className="text-gray-600">{strength}</li>
                                           ))}
                                         </ul>
                                       </div>
                                     )}
 
-                                    {(attempt.feedback as EvaluationFeedback).overall.areas_for_improvement?.length > 0 && (
+                                    {(attempt.feedback as any).overall.areas_for_improvement?.length > 0 && (
                                       <div>
                                         <h4 className="font-medium mb-2">Areas for Improvement</h4>
                                         <ul className="list-disc pl-4 space-y-1">
-                                          {(attempt.feedback as EvaluationFeedback).overall.areas_for_improvement.map((area, i) => (
+                                          {(attempt.feedback as any).overall.areas_for_improvement.map((area, i) => (
                                             <li key={i} className="text-gray-600">{area}</li>
                                           ))}
                                         </ul>
                                       </div>
                                     )}
 
-                                    {(attempt.feedback as EvaluationFeedback).overall.learning_recommendations?.length > 0 && (
+                                    {(attempt.feedback as any).overall.learning_recommendations?.length > 0 && (
                                       <div>
                                         <h4 className="font-medium mb-2">Learning Recommendations</h4>
                                         <ul className="list-disc pl-4 space-y-1">
-                                          {(attempt.feedback as EvaluationFeedback).overall.learning_recommendations.map((rec, i) => (
+                                          {(attempt.feedback as any).overall.learning_recommendations.map((rec, i) => (
                                             <li key={i} className="text-gray-600">{rec}</li>
                                           ))}
                                         </ul>
                                       </div>
                                     )}
 
-                                    {(attempt.feedback as EvaluationFeedback).performanceAnalytics?.difficultyAnalysis && (
+                                    {(attempt.feedback as any).performanceAnalytics?.difficultyAnalysis && (
                                       <div>
                                         <h4 className="font-medium mb-2">Performance Analytics</h4>
                                         <div className="grid grid-cols-3 gap-2 mt-2">
                                           <div className="text-center p-2 bg-secondary/10 rounded">
                                             <div className="text-2xl font-bold text-primary">
-                                              {(attempt.feedback as EvaluationFeedback).performanceAnalytics.difficultyAnalysis.easy}%
+                                              {(attempt.feedback as any).performanceAnalytics.difficultyAnalysis.easy}%
                                             </div>
                                             <div className="text-xs text-gray-500">Easy Questions</div>
                                           </div>
                                           <div className="text-center p-2 bg-secondary/10 rounded">
                                             <div className="text-2xl font-bold text-primary">
-                                              {(attempt.feedback as EvaluationFeedback).performanceAnalytics.difficultyAnalysis.medium}%
+                                              {(attempt.feedback as any).performanceAnalytics.difficultyAnalysis.medium}%
                                             </div>
                                             <div className="text-xs text-gray-500">Medium Questions</div>
                                           </div>
                                           <div className="text-center p-2 bg-secondary/10 rounded">
                                             <div className="text-2xl font-bold text-primary">
-                                              {(attempt.feedback as EvaluationFeedback).performanceAnalytics.difficultyAnalysis.hard}%
+                                              {(attempt.feedback as any).performanceAnalytics.difficultyAnalysis.hard}%
                                             </div>
                                             <div className="text-xs text-gray-500">Hard Questions</div>
                                           </div>
@@ -469,11 +470,11 @@ export default function Dashboard() {
                                   </div>
                                 )}
 
-                                {attempt.feedback.performanceAnalytics?.byChapter && (
+                                {(attempt.feedback as any).performanceAnalytics?.byChapter && (
                                   <div className="mt-6">
                                     <h4 className="font-medium mb-4">Chapter-wise Performance</h4>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                      {Object.entries(attempt.feedback.performanceAnalytics.byChapter).map(([chapter, data]: [string, any]) => (
+                                      {Object.entries((attempt.feedback as any).performanceAnalytics.byChapter).map(([chapter, data]: [string, any]) => (
                                         <Card key={chapter} className="p-4">
                                           <h5 className="font-medium mb-2">{chapter}</h5>
                                           <Progress value={data.score} className="mb-2" />
