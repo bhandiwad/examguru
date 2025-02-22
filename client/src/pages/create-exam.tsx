@@ -16,8 +16,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 
 const CURRICULA = [
-  "ICSE", 
-  "CBSE", 
+  "ICSE",
+  "CBSE",
   "Karnataka State Board",
   "JEE (Main)",
   "JEE (Advanced)",
@@ -36,7 +36,18 @@ const CURRICULUM_SUBJECTS = {
   "NEET": ["Physics", "Chemistry", "Biology"],
   "KVPY": ["Physics", "Chemistry", "Mathematics", "Biology"],
   "BITSAT": ["Physics", "Chemistry", "Mathematics", "English", "Logical Reasoning"],
-  "ICSE": ["Mathematics", "Physics", "Chemistry"],
+  "ICSE": [
+    "Mathematics",
+    "Physics",
+    "Chemistry",
+    "Biology",
+    "History & Civics",
+    "Geography",
+    "English Literature",
+    "English Language",
+    "Economics",
+    "Computer Science"
+  ],
   "CBSE": ["Mathematics", "Physics", "Chemistry"],
   "Karnataka State Board": ["Mathematics", "Physics", "Chemistry"]
 };
@@ -288,7 +299,7 @@ const TEXTBOOK_CHAPTERS = {
     "Physics": {
       title: "BITSAT Physics",
       chapters: [
-         "Kinematics",
+        "Kinematics",
         "Laws of Motion",
         "Work, Energy and Power",
         "Rotational Motion",
@@ -404,6 +415,125 @@ const TEXTBOOK_CHAPTERS = {
           "Metals and Non-metals",
           "Air and Water",
           "Carbon and its Compounds"
+        ]
+      },
+      "Biology": {
+        title: "Concise Biology Middle School",
+        publisher: "Selina",
+        author: "Dr BP Pandey",
+        chapters: [
+          "Cell - The Unit of Life",
+          "Tissues",
+          "The Flower",
+          "Pollination and Fertilization",
+          "Reproduction in Plants",
+          "The Human Body",
+          "Human Diseases",
+          "Ecosystems",
+          "Food Production",
+          "Environmental Protection"
+        ]
+      },
+      "History & Civics": {
+        title: "Total History & Civics",
+        publisher: "Morning Star",
+        author: "Dr Xavier Pinto",
+        chapters: [
+          "The Ancient World",
+          "Rise of Medieval India",
+          "The Modern Age",
+          "Indian Constitution",
+          "Fundamental Rights and Duties",
+          "Local Self Government",
+          "United Nations",
+          "India's Freedom Struggle",
+          "World Wars",
+          "Current Affairs"
+        ]
+      },
+      "Geography": {
+        title: "Total Geography",
+        publisher: "Morning Star",
+        author: "Dr Xavier Pinto",
+        chapters: [
+          "Resources",
+          "Natural Regions",
+          "Climate",
+          "Soils",
+          "Natural Vegetation",
+          "Water Resources",
+          "Agriculture",
+          "Industries",
+          "Transport and Communication",
+          "Map Work"
+        ]
+      },
+      "English Literature": {
+        title: "Concise English Literature",
+        publisher: "Selina",
+        author: "Dr John Smith",
+        chapters: [
+          "Poetry Analysis",
+          "Shakespeare's Works",
+          "Drama Studies",
+          "Short Stories",
+          "Novel Study",
+          "Literary Devices",
+          "Character Analysis",
+          "Theme Development",
+          "Critical Appreciation",
+          "Creative Writing"
+        ]
+      },
+      "English Language": {
+        title: "Concise English Language",
+        publisher: "Selina",
+        author: "Dr Sarah Wilson",
+        chapters: [
+          "Grammar Fundamentals",
+          "Composition Writing",
+          "Reading Comprehension",
+          "Letter Writing",
+          "Essay Writing",
+          "Notice and Email Writing",
+          "Report Writing",
+          "Speech Writing",
+          "Story Writing",
+          "Vocabulary Enhancement"
+        ]
+      },
+      "Economics": {
+        title: "Understanding Economics",
+        publisher: "Selina",
+        author: "Dr Anita Gupta",
+        chapters: [
+          "Introduction to Economics",
+          "Types of Economy",
+          "Market Structure",
+          "Money and Banking",
+          "Public Finance",
+          "National Income",
+          "International Trade",
+          "Economic Growth",
+          "Indian Economy",
+          "Current Economic Issues"
+        ]
+      },
+      "Computer Science": {
+        title: "Computer Applications",
+        publisher: "Selina",
+        author: "Dr Sumita Arora",
+        chapters: [
+          "Computer Fundamentals",
+          "Operating Systems",
+          "Word Processing",
+          "Spreadsheets",
+          "Presentation Software",
+          "Internet and Web",
+          "Introduction to Programming",
+          "HTML Basics",
+          "Cyber Safety",
+          "Latest Trends in Technology"
         ]
       }
     }
