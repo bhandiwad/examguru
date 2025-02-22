@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer } from "http";
 import multer from "multer";
 import { storage } from "./storage";
-import { generateQuestions, evaluateAnswers, analyzeQuestionPaperTemplate, generateTutorResponse } from "./openai";
+import { generateQuestions, evaluateAnswers, analyzeQuestionPaperTemplate, generateTutorResponse, adjustQuestionDifficulty } from "./openai";
 import { insertExamSchema, insertAttemptSchema, insertQuestionTemplateSchema } from "@shared/schema";
 
 // Configure multer for handling file uploads
@@ -431,6 +431,52 @@ export async function registerRoutes(app: Express) {
       console.error("Error in chat endpoint:", error);
       res.status(500).json({
         message: "Failed to generate response",
+        error: error.message
+      });
+    }
+  });
+
+  // Add the new route here
+  app.post("/api/exams/:id/adjust-difficulty", async (req, res) => {
+    try {
+      const examId = parseInt(req.params.id);
+      const { newDifficulty } = req.body;
+
+      if (isNaN(examId)) {
+        return res.status(400).json({ message: "Invalid exam ID" });
+      }
+
+      if (!["Easy", "Medium", "Hard"].includes(newDifficulty)) {
+        return res.status(400).json({ message: "Invalid difficulty level" });
+      }
+
+      // Get the original exam
+      const exam = await storage.getExam(examId);
+      if (!exam) {
+        return res.status(404).json({ message: "Exam not found" });
+      }
+
+      // Adjust questions difficulty
+      const adjustedQuestions = await adjustQuestionDifficulty(
+        exam.questions,
+        newDifficulty,
+        exam.subject,
+        exam.grade
+      );
+
+      // Create a new exam with adjusted questions
+      const newExam = await storage.createExam({
+        ...exam,
+        difficulty: newDifficulty,
+        questions: adjustedQuestions,
+        templateId: exam.templateId
+      });
+
+      res.json(newExam);
+    } catch (error: any) {
+      console.error("Error adjusting exam difficulty:", error);
+      res.status(500).json({
+        message: "Failed to adjust exam difficulty",
         error: error.message
       });
     }

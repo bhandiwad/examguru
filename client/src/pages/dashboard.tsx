@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { PlusCircle, FilePlus, Filter } from "lucide-react";
+import { PlusCircle, FilePlus, Filter, ChevronDown } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -41,16 +41,25 @@ import {
 import { LearningRecommendations } from "@/components/LearningRecommendations";
 import { TutorChat } from "@/components/TutorChat";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 
 type AttemptWithExam = Attempt & { exam: Exam };
+type DifficultyLevel = "Easy" | "Medium" | "Hard";
 
 function formatDateTime(date: string | Date) {
-  return new Date(date).toLocaleString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
+  return new Date(date).toLocaleString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   });
 }
 
@@ -58,17 +67,28 @@ function QuestionFeedback({ feedback }: { feedback: any }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
-        <div className={`w-2 h-2 rounded-full ${feedback.isCorrect ? 'bg-green-500' : 'bg-red-500'}`} />
+        <div
+          className={`w-2 h-2 rounded-full ${
+            feedback.isCorrect ? "bg-green-500" : "bg-red-500"
+          }`}
+        />
         <span className="font-medium">
-          Question {feedback.questionNumber}
-          {feedback.isCorrect ? ' (Correct)' : ' (Incorrect)'}
+          Question {feedback.questionNumber}{" "}
+          {feedback.isCorrect ? " (Correct)" : " (Incorrect)"}
         </span>
       </div>
 
       <div className="ml-4 space-y-2">
-        <p><strong>Chapter:</strong> {feedback.chapter}</p>
-        <p><strong>Topic:</strong> {feedback.topic}</p>
-        <p><strong>Understanding Level:</strong> {feedback.conceptualUnderstanding.level}</p>
+        <p>
+          <strong>Chapter:</strong> {feedback.chapter}
+        </p>
+        <p>
+          <strong>Topic:</strong> {feedback.topic}
+        </p>
+        <p>
+          <strong>Understanding Level:</strong>{" "}
+          {feedback.conceptualUnderstanding.level}
+        </p>
         <p>{feedback.conceptualUnderstanding.details}</p>
 
         {feedback.misconceptions && feedback.misconceptions.length > 0 && (
@@ -89,7 +109,9 @@ function QuestionFeedback({ feedback }: { feedback: any }) {
               {feedback.studyResources.map((resource: any, i: number) => (
                 <li key={i} className="p-2 bg-secondary/10 rounded">
                   <div className="font-medium">{resource.title}</div>
-                  <div className="text-sm text-muted-foreground">{resource.description}</div>
+                  <div className="text-sm text-muted-foreground">
+                    {resource.description}
+                  </div>
                   {resource.link && (
                     <a
                       href={resource.link}
@@ -113,26 +135,34 @@ function QuestionFeedback({ feedback }: { feedback: any }) {
 const ITEMS_PER_PAGE = 6;
 
 export default function Dashboard() {
+  const queryClient = useQueryClient();
   const [selectedSubject, setSelectedSubject] = useState<string>("all");
   const [selectedGrade, setSelectedGrade] = useState<string>("all");
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
-  const { data: attempts, isLoading: attemptsLoading } = useQuery<AttemptWithExam[]>({
-    queryKey: ["/api/attempts"]
+  const { data: attempts, isLoading: attemptsLoading } = useQuery<
+    AttemptWithExam[]
+  >({
+    queryKey: ["/api/attempts"],
   });
 
   const { data: exams, isLoading: examsLoading } = useQuery<Exam[]>({
-    queryKey: ["/api/exams"]
+    queryKey: ["/api/exams"],
   });
 
   const isLoading = attemptsLoading || examsLoading;
 
-  const filteredExams = exams?.filter(exam => {
-    if (selectedSubject !== "all" && exam.subject !== selectedSubject) return false;
+  const filteredExams = exams?.filter((exam) => {
+    if (selectedSubject !== "all" && exam.subject !== selectedSubject)
+      return false;
     if (selectedGrade !== "all" && exam.grade !== selectedGrade) return false;
-    if (selectedDifficulty !== "all" && exam.difficulty !== selectedDifficulty) return false;
+    if (
+      selectedDifficulty !== "all" &&
+      exam.difficulty !== selectedDifficulty
+    )
+      return false;
     return true;
   }) || [];
 
@@ -176,7 +206,9 @@ export default function Dashboard() {
           {attempts && attempts.length > 0 && (
             <>
               <div className="mb-8">
-                <h2 className="text-xl font-semibold mb-4">Performance Analytics</h2>
+                <h2 className="text-xl font-semibold mb-4">
+                  Performance Analytics
+                </h2>
                 <PerformanceTrends attempts={attempts} />
               </div>
 
@@ -187,7 +219,9 @@ export default function Dashboard() {
           )}
 
           <div className="mb-8">
-            <h2 className="text-xl font-semibold mb-4">Achievements & Badges</h2>
+            <h2 className="text-xl font-semibold mb-4">
+              Achievements & Badges
+            </h2>
             <AchievementDisplay />
           </div>
 
@@ -270,7 +304,9 @@ export default function Dashboard() {
                               <SelectValue placeholder="Select difficulty" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="all">All Difficulties</SelectItem>
+                              <SelectItem value="all">
+                                All Difficulties
+                              </SelectItem>
                               {DIFFICULTIES.map((diff) => (
                                 <SelectItem key={diff} value={diff}>
                                   {diff}
@@ -290,7 +326,9 @@ export default function Dashboard() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.max(1, prev - 1))
+                    }
                     disabled={currentPage === 1}
                   >
                     Previous
@@ -301,7 +339,9 @@ export default function Dashboard() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+                    }
                     disabled={currentPage === totalPages}
                   >
                     Next
@@ -312,7 +352,60 @@ export default function Dashboard() {
                 {paginatedExams.map((exam) => (
                   <Card key={exam.id} className="bg-primary/5">
                     <CardHeader>
-                      <CardTitle>{exam.subject}</CardTitle>
+                      <div className="flex justify-between items-center">
+                        <CardTitle>{exam.subject}</CardTitle>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="ml-2"
+                            >
+                              <ChevronDown className="h-4 w-4 mr-1" />
+                              Difficulty: {exam.difficulty}
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            {["Easy", "Medium", "Hard"].map((level) => (
+                              <DropdownMenuItem
+                                key={level}
+                                onClick={() => {
+                                  const adjustDifficultyMutation = useMutation({
+                                    mutationFn: async () => {
+                                      try {
+                                        const response = await apiRequest(
+                                          "POST",
+                                          `/api/exams/${exam.id}/adjust-difficulty`,
+                                          { newDifficulty: level }
+                                        );
+                                        return response.json();
+                                      } catch (error) {
+                                        console.error(
+                                          "Error adjusting difficulty:",
+                                          error
+                                        );
+                                        // Optionally display an error message to the user
+                                        alert("Error adjusting difficulty. Please try again later.")
+                                      }
+                                    },
+                                    onSuccess: () => {
+                                      queryClient.invalidateQueries(["/api/exams"]);
+                                    },
+                                    onError: (error) => {
+                                      console.error("Error:", error);
+                                      alert("Error adjusting difficulty. Please try again later.")
+                                    }
+                                  });
+                                  adjustDifficultyMutation.mutate();
+                                }}
+                                disabled={level === exam.difficulty}
+                              >
+                                {level}
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-2">
@@ -390,7 +483,9 @@ export default function Dashboard() {
                             <div className="flex-1">
                               <div className="flex justify-between mb-1">
                                 <span className="text-sm font-medium">Score</span>
-                                <span className="text-sm font-medium">{attempt.score}%</span>
+                                <span className="text-sm font-medium">
+                                  {attempt.score}%
+                                </span>
                               </div>
                               <Progress value={attempt.score} />
                             </div>
@@ -409,66 +504,95 @@ export default function Dashboard() {
                                     {(attempt.feedback as any).overall && (
                                       <>
                                         <div>
-                                          <h4 className="font-medium mb-2">Overview</h4>
+                                          <h4 className="font-medium mb-2">
+                                            Overview
+                                          </h4>
                                           <p className="text-gray-600">
-                                            {(attempt.feedback as any).overall.summary}
+                                            {(attempt.feedback as any).overall
+                                              .summary}
                                           </p>
                                         </div>
 
                                         {(attempt.feedback as any).overall.strengths?.length > 0 && (
                                           <div>
-                                            <h4 className="font-medium mb-2">Strengths</h4>
+                                            <h4 className="font-medium mb-2">
+                                              Strengths
+                                            </h4>
                                             <ul className="list-disc pl-4 space-y-1">
-                                              {(attempt.feedback as any).overall.strengths.map((strength, i) => (
-                                                <li key={i} className="text-gray-600">{strength}</li>
-                                              ))}
+                                              {(attempt.feedback as any).overall.strengths.map(
+                                                (strength, i) => (
+                                                  <li key={i} className="text-gray-600">
+                                                    {strength}
+                                                  </li>
+                                                )
+                                              )}
                                             </ul>
                                           </div>
                                         )}
 
                                         {(attempt.feedback as any).overall.areas_for_improvement?.length > 0 && (
                                           <div>
-                                            <h4 className="font-medium mb-2">Areas for Improvement</h4>
+                                            <h4 className="font-medium mb-2">
+                                              Areas for Improvement
+                                            </h4>
                                             <ul className="list-disc pl-4 space-y-1">
-                                              {(attempt.feedback as any).overall.areas_for_improvement.map((area, i) => (
-                                                <li key={i} className="text-gray-600">{area}</li>
-                                              ))}
+                                              {(attempt.feedback as any).overall.areas_for_improvement.map(
+                                                (area, i) => (
+                                                  <li key={i} className="text-gray-600">
+                                                    {area}
+                                                  </li>
+                                                )
+                                              )}
                                             </ul>
                                           </div>
                                         )}
 
                                         {(attempt.feedback as any).overall.learning_recommendations?.length > 0 && (
                                           <div>
-                                            <h4 className="font-medium mb-2">Learning Recommendations</h4>
+                                            <h4 className="font-medium mb-2">
+                                              Learning Recommendations
+                                            </h4>
                                             <ul className="list-disc pl-4 space-y-1">
-                                              {(attempt.feedback as any).overall.learning_recommendations.map((rec, i) => (
-                                                <li key={i} className="text-gray-600">{rec}</li>
-                                              ))}
+                                              {(attempt.feedback as any).overall.learning_recommendations.map(
+                                                (rec, i) => (
+                                                  <li key={i} className="text-gray-600">
+                                                    {rec}
+                                                  </li>
+                                                )
+                                              )}
                                             </ul>
                                           </div>
                                         )}
 
                                         {(attempt.feedback as any).performanceAnalytics?.difficultyAnalysis && (
                                           <div>
-                                            <h4 className="font-medium mb-2">Performance Analytics</h4>
+                                            <h4 className="font-medium mb-2">
+                                              Performance Analytics
+                                            </h4>
                                             <div className="grid grid-cols-3 gap-2 mt-2">
                                               <div className="text-center p-2 bg-secondary/10 rounded">
                                                 <div className="text-2xl font-bold text-primary">
                                                   {(attempt.feedback as any).performanceAnalytics.difficultyAnalysis.easy}%
                                                 </div>
-                                                <div className="text-xs text-gray-500">Easy Questions</div>
+                                                <div className="text-xs text-gray-500">
+                                                  Easy Questions
+                                                </div>
                                               </div>
                                               <div className="text-center p-2 bg-secondary/10 rounded">
                                                 <div className="text-2xl font-bold text-primary">
                                                   {(attempt.feedback as any).performanceAnalytics.difficultyAnalysis.medium}%
                                                 </div>
-                                                <div className="text-xs text-gray-500">Medium Questions</div>
+                                                <div className="text-xs text-gray-500">
+                                                  Medium Questions
+                                                </div>
                                               </div>
                                               <div className="text-center p-2 bg-secondary/10 rounded">
                                                 <div className="text-2xl font-bold text-primary">
                                                   {(attempt.feedback as any).performanceAnalytics.difficultyAnalysis.hard}%
                                                 </div>
-                                                <div className="text-xs text-gray-500">Hard Questions</div>
+                                                <div className="text-xs text-gray-500">
+                                                  Hard Questions
+                                                </div>
                                               </div>
                                             </div>
                                           </div>
@@ -477,39 +601,55 @@ export default function Dashboard() {
                                     )}
                                     {attempt.feedback.questions && (
                                       <div className="mt-6">
-                                        <h4 className="font-medium mb-4">Question-by-Question Analysis</h4>
+                                        <h4 className="font-medium mb-4">
+                                          Question-by-Question Analysis
+                                        </h4>
                                         <div className="space-y-6">
-                                          {attempt.feedback.questions.map((questionFeedback: any) => (
-                                            <QuestionFeedback
-                                              key={questionFeedback.questionNumber}
-                                              feedback={questionFeedback}
-                                            />
-                                          ))}
+                                          {attempt.feedback.questions.map(
+                                            (questionFeedback: any) => (
+                                              <QuestionFeedback
+                                                key={questionFeedback.questionNumber}
+                                                feedback={questionFeedback}
+                                              />
+                                            )
+                                          )}
                                         </div>
                                       </div>
                                     )}
 
                                     {(attempt.feedback as any).performanceAnalytics?.byChapter && (
                                       <div className="mt-6">
-                                        <h4 className="font-medium mb-4">Chapter-wise Performance</h4>
+                                        <h4 className="font-medium mb-4">
+                                          Chapter-wise Performance
+                                        </h4>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                          {Object.entries((attempt.feedback as any).performanceAnalytics.byChapter).map(([chapter, data]: [string, any]) => (
-                                            <Card key={chapter} className="p-4">
-                                              <h5 className="font-medium mb-2">{chapter}</h5>
-                                              <Progress value={data.score} className="mb-2" />
-                                              <p className="text-sm text-muted-foreground mb-2">Score: {data.score}%</p>
-                                              {data.recommendations && (
-                                                <div className="text-sm">
-                                                  <strong>Recommendations:</strong>
-                                                  <ul className="list-disc pl-4 mt-1">
-                                                    {data.recommendations.map((rec: string, i: number) => (
-                                                      <li key={i}>{rec}</li>
-                                                    ))}
-                                                  </ul>
-                                                </div>
-                                              )}
-                                            </Card>
-                                          ))}
+                                          {Object.entries((attempt.feedback as any).performanceAnalytics.byChapter).map(
+                                            ([chapter, data]: [string, any]) => (
+                                              <Card key={chapter} className="p-4">
+                                                <h5 className="font-medium mb-2">
+                                                  {chapter}
+                                                </h5>
+                                                <Progress value={data.score} className="mb-2" />
+                                                <p className="text-sm text-muted-foreground mb-2">
+                                                  Score: {data.score}%
+                                                </p>
+                                                {data.recommendations && (
+                                                  <div className="text-sm">
+                                                    <strong>Recommendations:</strong>
+                                                    <ul className="list-disc pl-4 mt-1">
+                                                      {data.recommendations.map(
+                                                        (rec: string, i: number) => (
+                                                          <li key={i}>
+                                                            {rec}
+                                                          </li>
+                                                        )
+                                                      )}
+                                                    </ul>
+                                                  </div>
+                                                )}
+                                              </Card>
+                                            )
+                                          )}
                                         </div>
                                       </div>
                                     )}
@@ -535,54 +675,55 @@ export default function Dashboard() {
         </TabsContent>
 
         <TabsContent value="tutor">
-            <div className="grid gap-8 md:grid-cols-2">
-              <div className="space-y-4">
-                <h2 className="text-xl font-semibold">AI Tutor Assistant</h2>
-                <p className="text-muted-foreground">
-                  Get personalized help with your studies. Ask questions about any topic
-                  and receive detailed explanations tailored to your grade level.
-                </p>
-                {attempts && attempts[0] && (
-                  <TutorChat
-                    subject={attempts[0].exam.subject}
-                    grade={attempts[0].exam.grade}
-                  />
-                )}
-              </div>
-
-              <div className="space-y-4">
-                <Card className="h-fit">
-                  <CardHeader>
-                    <CardTitle>How to Use the AI Tutor</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ul className="space-y-3">
-                      <li className="flex items-center gap-2">
-                        <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-                        Ask specific questions about topics you're studying
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-                        Request step-by-step explanations of concepts
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-                        Get help understanding exam questions
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-                        Practice problem-solving with guidance
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-                        Receive personalized learning recommendations
-                      </li>
-                    </ul>
-                  </CardContent>
-                </Card>
-              </div>
+          <div className="grid gap-8 md:grid-cols-2">
+            <div className="space-y-4">
+              <h2 className="text-xl font-semibold">AI Tutor Assistant</h2>
+              <p className="text-muted-foreground">
+                Get personalized help with your studies. Ask questions about any
+                topic and receive detailed explanations tailored to your grade
+                level.
+              </p>
+              {attempts && attempts[0] && (
+                <TutorChat
+                  subject={attempts[0].exam.subject}
+                  grade={attempts[0].exam.grade}
+                />
+              )}
             </div>
-          </TabsContent>
+
+            <div className="space-y-4">
+              <Card className="h-fit">
+                <CardHeader>
+                  <CardTitle>How to Use the AI Tutor</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-3">
+                    <li className="flex items-center gap-2">
+                      <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                      Ask specific questions about topics you're studying
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                      Request step-by-step explanations of concepts
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                      Get help understanding exam questions
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                      Practice problem-solving with guidance
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                      Receive personalized learning recommendations
+                    </li>
+                  </ul>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </TabsContent>
       </Tabs>
     </div>
   );

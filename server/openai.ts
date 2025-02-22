@@ -471,3 +471,78 @@ export async function generateTutorResponse(
     throw new Error(`Failed to generate tutor response: ${error.message}`);
   }
 }
+
+// Add new difficulty adjustment function
+export async function adjustQuestionDifficulty(
+  questions: any[],
+  newDifficulty: string,
+  subject: string,
+  grade: string
+) {
+  console.log("Adjusting difficulty to:", newDifficulty);
+
+  let difficultyGuidelines = "";
+  if (newDifficulty === "Hard") {
+    difficultyGuidelines = `
+    Increase complexity by:
+    1. Adding multi-step problem solving
+    2. Combining multiple concepts
+    3. Including advanced applications
+    4. Requiring deeper analysis
+    5. Using more complex language and technical terms`;
+  } else if (newDifficulty === "Easy") {
+    difficultyGuidelines = `
+    Simplify by:
+    1. Breaking down into basic steps
+    2. Using straightforward language
+    3. Focusing on core concepts
+    4. Providing more context
+    5. Using simpler examples`;
+  }
+
+  const prompt = `
+  Adjust these ${subject} questions for Grade ${grade} to ${newDifficulty} difficulty level.
+  Original questions: ${JSON.stringify(questions, null, 2)}
+
+  ${difficultyGuidelines}
+
+  Requirements:
+  1. Maintain the same core concepts and learning objectives
+  2. Keep the question structure consistent
+  3. Adjust complexity while ensuring curriculum alignment
+  4. Update scoring rubrics accordingly
+  5. Maintain MCQ format for MCQ questions
+  6. Keep the same number of questions
+
+  Return a valid JSON array with the same structure as the input questions.`;
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4",
+      messages: [
+        {
+          role: "system",
+          content: "You are an expert exam question generator specializing in adapting question difficulty while maintaining educational value."
+        },
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.7
+    });
+
+    if (!response.choices[0].message.content) {
+      throw new Error("No content received from OpenAI");
+    }
+
+    const adjustedQuestions = JSON.parse(response.choices[0].message.content);
+    console.log("Successfully adjusted questions difficulty");
+
+    return adjustedQuestions.questions;
+  } catch (error: any) {
+    console.error("Error adjusting question difficulty:", error);
+    throw new Error(`Failed to adjust question difficulty: ${error.message}`);
+  }
+}
