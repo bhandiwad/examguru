@@ -13,6 +13,7 @@ interface SharePerformanceProps {
 export function SharePerformanceInsights({ attempts }: SharePerformanceProps) {
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
+  const [shareLink, setShareLink] = useState<string | null>(null);
 
   const shareByEmailMutation = useMutation({
     mutationFn: async (email: string) => {
@@ -72,41 +73,64 @@ export function SharePerformanceInsights({ attempts }: SharePerformanceProps) {
       return data;
     },
     onSuccess: async (data) => {
+      // Store the share link regardless of copy success
+      setShareLink(data.shareLink);
+
+      let copySuccess = false;
       try {
-        // Try using the modern Clipboard API first
-        if (navigator.clipboard && window.isSecureContext) {
-          await navigator.clipboard.writeText(data.shareLink);
-        } else {
-          // Fallback for older browsers or non-HTTPS contexts
+        // Try using the modern Clipboard API
+        await navigator.clipboard.writeText(data.shareLink);
+        copySuccess = true;
+      } catch (error) {
+        console.error('Clipboard API failed:', error);
+        try {
+          // Fallback to execCommand
           const textArea = document.createElement("textarea");
           textArea.value = data.shareLink;
-          textArea.style.position = "fixed";
-          textArea.style.left = "-999999px";
-          textArea.style.top = "-999999px";
           document.body.appendChild(textArea);
-          textArea.focus();
           textArea.select();
-
-          try {
-            document.execCommand('copy');
-          } finally {
-            textArea.remove();
-          }
+          copySuccess = document.execCommand('copy');
+          textArea.remove();
+        } catch (fallbackError) {
+          console.error('Fallback copy failed:', fallbackError);
         }
+      }
 
+      if (copySuccess) {
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
         toast({
           title: "Link copied to clipboard",
           description: "Share this link with parents or guardians",
         });
-      } catch (error) {
-        console.error('Copy failed:', error);
-        // Show the link in the toast so users can copy manually
+      } else {
         toast({
-          title: "Couldn't copy automatically",
-          description: `Please copy this link manually: ${data.shareLink}`,
-          variant: "destructive",
+          title: "Share link generated",
+          description: `Click to copy: ${data.shareLink}`,
+          action: <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => {
+              navigator.clipboard.writeText(data.shareLink)
+                .then(() => {
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
+                  toast({
+                    title: "Link copied",
+                    description: "Share link copied to clipboard"
+                  });
+                })
+                .catch(() => {
+                  toast({
+                    title: "Copy failed",
+                    description: "Please select and copy the link manually",
+                    variant: "destructive"
+                  });
+                });
+            }}
+          >
+            Copy
+          </Button>,
         });
       }
     },
@@ -135,7 +159,44 @@ export function SharePerformanceInsights({ attempts }: SharePerformanceProps) {
   };
 
   const handleCopyLink = () => {
-    generateShareLinkMutation.mutate();
+    if (shareLink) {
+      // If we already have a share link, try to copy it again
+      navigator.clipboard.writeText(shareLink)
+        .then(() => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+          toast({
+            title: "Link copied",
+            description: "Share link copied to clipboard"
+          });
+        })
+        .catch(() => {
+          toast({
+            title: "Share link",
+            description: `Click to copy: ${shareLink}`,
+            action: <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => {
+                navigator.clipboard.writeText(shareLink)
+                  .then(() => {
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                    toast({
+                      title: "Link copied",
+                      description: "Share link copied to clipboard"
+                    });
+                  });
+              }}
+            >
+              Copy
+            </Button>,
+          });
+        });
+    } else {
+      // Generate new share link
+      generateShareLinkMutation.mutate();
+    }
   };
 
   if (!attempts.length) {
@@ -172,7 +233,7 @@ export function SharePerformanceInsights({ attempts }: SharePerformanceProps) {
         ) : (
           <Copy className="h-4 w-4" />
         )}
-        Copy Share Link
+        {shareLink ? 'Copy Link' : 'Generate Link'}
       </Button>
     </div>
   );
