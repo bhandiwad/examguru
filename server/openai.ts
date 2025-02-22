@@ -498,13 +498,19 @@ export async function generateTutorResponse(
     - Relate concepts to everyday experiences
     - Encourage students to think through problems themselves`;
 
+    // Ensure messages are properly formatted for the OpenAI API
+    const messages = [
+      { role: "system", content: systemPrompt },
+      ...history.map(msg => ({
+        role: msg.role as "system" | "user" | "assistant",
+        content: msg.content
+      })),
+      { role: "user", content: message }
+    ];
+
     const response = await openai.chat.completions.create({
       model: "gpt-4",
-      messages: [
-        { role: "system", content: systemPrompt },
-        ...history,
-        { role: "user", content: message }
-      ],
+      messages,
       temperature: 0.7,
       max_tokens: 1000
     });

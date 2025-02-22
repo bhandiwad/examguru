@@ -469,29 +469,33 @@ export async function registerRoutes(app: Express) {
       const userId = 1; // TODO: Get from authenticated session
       const attempts = await storage.getAttempts(userId);
 
-      // Analyze performance data
-      const performanceContext = attempts
-        .filter(attempt => attempt.exam.subject === subject)
-        .map(attempt => ({
-          score: attempt.score,
-          feedback: attempt.feedback,
-          date: attempt.endTime
-        }));
+      // Analyze performance data for the specific subject
+      const subjectAttempts = attempts.filter(attempt => attempt.exam.subject === subject);
 
-      // Add performance context to the chat history
+      // Initialize the chat history array
       const chatHistory = history || [];
-      if (performanceContext.length > 0) {
+
+      // Only add performance context if there are attempts
+      if (subjectAttempts.length > 0) {
+        // Calculate average score safely
+        const totalScore = subjectAttempts.reduce((sum, attempt) => {
+          return sum + (attempt.score || 0);
+        }, 0);
+        const averageScore = (totalScore / subjectAttempts.length).toFixed(1);
+
+        // Get the most recent attempt's feedback safely
+        const latestAttempt = subjectAttempts[0];
+        const strengths = latestAttempt?.feedback?.overall?.strengths || [];
+        const improvements = latestAttempt?.feedback?.overall?.areas_for_improvement || [];
+
+        // Add performance context as system message
         chatHistory.unshift({
           role: "system",
-          content: `Student's performance in ${subject}: ${
-            performanceContext.length
-          } attempts, average score: ${
-            performanceContext.reduce((sum, p) => sum + p.score, 0) / performanceContext.length
-          }%. Recent strengths: ${
-            performanceContext[0]?.feedback?.overall?.strengths?.join(", ") || "No data"
-          }. Areas for improvement: ${
-            performanceContext[0]?.feedback?.overall?.areas_for_improvement?.join(", ") || "No data"
-          }`
+          content: `Student's performance context for ${subject}:
+          - Number of attempts: ${subjectAttempts.length}
+          - Average score: ${averageScore}%
+          - Recent strengths: ${strengths.length ? strengths.join(", ") : "No data available"}
+          - Areas for improvement: ${improvements.length ? improvements.join(", ") : "No data available"}`
         });
       }
 
