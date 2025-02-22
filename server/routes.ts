@@ -6,26 +6,13 @@ import { generateQuestions, evaluateAnswers, analyzeQuestionPaperTemplate, gener
 import { insertExamSchema, insertAttemptSchema, insertQuestionTemplateSchema } from "@shared/schema";
 import { createTransport } from "nodemailer";
 import { randomUUID } from "crypto";
+import { parseCommand, generateResponse } from "./commandParser";
 
 // Configure multer for handling file uploads
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
 });
-
-// Placeholder functions - replace with actual implementations
-async function parseCommand(message: string): Promise<{ type: string; data: any }> {
-  // Implement command parsing logic here
-  // This is a placeholder, replace with your actual parsing logic
-  return { type: "unknown", data: {} };
-}
-
-async function generateResponse(command: { type: string; data: any }, message: string): Promise<string> {
-  // Implement response generation logic here based on the command
-  // This is a placeholder, replace with your actual response generation logic
-  return "I don't understand that command yet.";
-}
-
 
 export async function registerRoutes(app: Express) {
   // Template management routes
