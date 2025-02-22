@@ -110,9 +110,9 @@ function QuestionFeedback({ feedback }: { feedback: any }) {
 const ITEMS_PER_PAGE = 6;
 
 export default function Dashboard() {
-  const [selectedSubject, setSelectedSubject] = useState<string>("");
-  const [selectedGrade, setSelectedGrade] = useState<string>("");
-  const [selectedDifficulty, setSelectedDifficulty] = useState<string>("");
+  const [selectedSubject, setSelectedSubject] = useState<string>("all");
+  const [selectedGrade, setSelectedGrade] = useState<string>("all");
+  const [selectedDifficulty, setSelectedDifficulty] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
@@ -127,9 +127,9 @@ export default function Dashboard() {
   const isLoading = attemptsLoading || examsLoading;
 
   const filteredExams = exams?.filter(exam => {
-    if (selectedSubject && exam.subject !== selectedSubject) return false;
-    if (selectedGrade && exam.grade !== selectedGrade) return false;
-    if (selectedDifficulty && exam.difficulty !== selectedDifficulty) return false;
+    if (selectedSubject !== "all" && exam.subject !== selectedSubject) return false;
+    if (selectedGrade !== "all" && exam.grade !== selectedGrade) return false;
+    if (selectedDifficulty !== "all" && exam.difficulty !== selectedDifficulty) return false;
     return true;
   }) || [];
 
@@ -177,7 +177,7 @@ export default function Dashboard() {
                         <SelectValue placeholder="Select subject" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All Subjects</SelectItem>
+                        <SelectItem value="all">All Subjects</SelectItem>
                         {SUBJECTS.map((subject) => (
                           <SelectItem key={subject} value={subject}>
                             {subject}
@@ -200,7 +200,7 @@ export default function Dashboard() {
                         <SelectValue placeholder="Select grade" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All Grades</SelectItem>
+                        <SelectItem value="all">All Grades</SelectItem>
                         {GRADES.map((grade) => (
                           <SelectItem key={grade} value={grade}>
                             Grade {grade}
@@ -223,7 +223,7 @@ export default function Dashboard() {
                         <SelectValue placeholder="Select difficulty" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All Difficulties</SelectItem>
+                        <SelectItem value="all">All Difficulties</SelectItem>
                         {DIFFICULTIES.map((diff) => (
                           <SelectItem key={diff} value={diff}>
                             {diff}
