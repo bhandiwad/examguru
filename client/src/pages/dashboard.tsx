@@ -86,12 +86,17 @@ function QuestionFeedback({ feedback }: { feedback: any }) {
         <p>
           <strong>Topic:</strong> {feedback.topic}
         </p>
-        <p>
-          <strong>Understanding Level:</strong> {feedback.conceptualUnderstanding.level}
-        </p>
-        <p>{feedback.conceptualUnderstanding.details}</p>
+        {feedback.conceptualUnderstanding && (
+          <>
+            <p>
+              <strong>Understanding Level:</strong>{" "}
+              {feedback.conceptualUnderstanding.level}
+            </p>
+            <p>{feedback.conceptualUnderstanding.details}</p>
+          </>
+        )}
 
-        {feedback.misconceptions && feedback.misconceptions.length > 0 && (
+        {Array.isArray(feedback.misconceptions) && feedback.misconceptions.length > 0 && (
           <div>
             <strong>Common Misconceptions:</strong>
             <ul className="list-disc pl-4">
@@ -102,7 +107,7 @@ function QuestionFeedback({ feedback }: { feedback: any }) {
           </div>
         )}
 
-        {feedback.studyResources && feedback.studyResources.length > 0 && (
+        {Array.isArray(feedback.studyResources) && feedback.studyResources.length > 0 && (
           <div>
             <strong>Study Resources:</strong>
             <ul className="list-none space-y-2 mt-2">
@@ -539,14 +544,14 @@ export default function Dashboard() {
                                           </p>
                                         </div>
 
-                                        {(attempt.feedback as any).overall.strengths?.length > 0 && (
+                                        {Array.isArray((attempt.feedback as any).overall.strengths) && (
                                           <div>
                                             <h4 className="font-medium mb-2">
                                               Strengths
                                             </h4>
                                             <ul className="list-disc pl-4 space-y-1">
                                               {(attempt.feedback as any).overall.strengths.map(
-                                                (strength, i) => (
+                                                (strength: string, i: number) => (
                                                   <li key={i} className="text-gray-600">
                                                     {strength}
                                                   </li>
@@ -556,14 +561,14 @@ export default function Dashboard() {
                                           </div>
                                         )}
 
-                                        {(attempt.feedback as any).overall.areas_for_improvement?.length > 0 && (
+                                        {Array.isArray((attempt.feedback as any).overall.areas_for_improvement) && (
                                           <div>
                                             <h4 className="font-medium mb-2">
                                               Areas for Improvement
                                             </h4>
                                             <ul className="list-disc pl-4 space-y-1">
                                               {(attempt.feedback as any).overall.areas_for_improvement.map(
-                                                (area, i) => (
+                                                (area: string, i: number) => (
                                                   <li key={i} className="text-gray-600">
                                                     {area}
                                                   </li>
@@ -573,59 +578,43 @@ export default function Dashboard() {
                                           </div>
                                         )}
 
-                                        {(attempt.feedback as any).overall.learning_recommendations?.length > 0 && (
+                                        {Array.isArray((attempt.feedback as any).overall.learning_recommendations) && (
                                           <div>
                                             <h4 className="font-medium mb-2">
                                               Learning Recommendations
                                             </h4>
                                             <ul className="list-disc pl-4 space-y-1">
                                               {(attempt.feedback as any).overall.learning_recommendations.map(
-                                                (rec, i) => (
+                                                (rec: any, i: number) => (
                                                   <li key={i} className="text-gray-600">
-                                                    {rec}
+                                                    {rec.topic && <strong>{rec.topic}: </strong>}
+                                                    {rec.recommendation}
+                                                    {Array.isArray(rec.resources) && rec.resources.map((resource: any, j: number) => (
+                                                      <div key={j} className="ml-4 mt-1">
+                                                        <span className="text-sm text-muted-foreground">
+                                                          {resource.type}: {resource.title}
+                                                        </span>
+                                                        {resource.link && (
+                                                          <a
+                                                            href={resource.link}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="ml-2 text-sm text-primary hover:underline"
+                                                          >
+                                                            View →
+                                                          </a>
+                                                        )}
+                                                      </div>
+                                                    ))}
                                                   </li>
                                                 )
                                               )}
                                             </ul>
                                           </div>
                                         )}
-
-                                        {(attempt.feedback as any).performanceAnalytics?.difficultyAnalysis && (
-                                          <div>
-                                            <h4 className="font-medium mb-2">
-                                              Performance Analytics
-                                            </h4>
-                                            <div className="grid grid-cols-3 gap-2 mt-2">
-                                              <div className="text-center p-2 bg-secondary/10 rounded">
-                                                <div className="text-2xl font-bold text-primary">
-                                                  {(attempt.feedback as any).performanceAnalytics.difficultyAnalysis.easy}%
-                                                </div>
-                                                <div className="text-xs text-gray-500">
-                                                  Easy Questions
-                                                </div>
-                                              </div>
-                                              <div className="text-center p-2 bg-secondary/10 rounded">
-                                                <div className="text-2xl font-bold text-primary">
-                                                  {(attempt.feedback as any).performanceAnalytics.difficultyAnalysis.medium}%
-                                                </div>
-                                                <div className="text-xs text-gray-500">
-                                                  Medium Questions
-                                                </div>
-                                              </div>
-                                              <div className="text-center p-2 bg-secondary/10 rounded">
-                                                <div className="text-2xl font-bold text-primary">
-                                                  {(attempt.feedback as any).performanceAnalytics.difficultyAnalysis.hard}%
-                                                </div>
-                                                <div className="text-xs text-gray-500">
-                                                  Hard Questions
-                                                </div>
-                                              </div>
-                                            </div>
-                                          </div>
-                                        )}
                                       </>
                                     )}
-                                    {attempt.feedback.questions && (
+                                    {Array.isArray(attempt.feedback.questions) && (
                                       <div className="mt-6">
                                         <h4 className="font-medium mb-4">
                                           Question-by-Question Analysis
@@ -649,33 +638,31 @@ export default function Dashboard() {
                                           Chapter-wise Performance
                                         </h4>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                          {Object.entries((attempt.feedback as any).performanceAnalytics.byChapter).map(
-                                            ([chapter, data]: [string, any]) => (
-                                              <Card key={chapter} className="p-4">
-                                                <h5 className="font-medium mb-2">
-                                                  {chapter}
-                                                </h5>
-                                                <Progress value={data.score} className="mb-2" />
-                                                <p className="text-sm text-muted-foreground mb-2">
-                                                  Score: {data.score}%
-                                                </p>
-                                                {data.recommendations && (
-                                                  <div className="text-sm">
-                                                    <strong>Recommendations:</strong>
-                                                    <ul className="list-disc pl-4 mt-1">
-                                                      {data.recommendations.map(
-                                                        (rec: string, i: number) => (
-                                                          <li key={i}>
-                                                            {rec}
-                                                          </li>
-                                                        )
-                                                      )}
-                                                    </ul>
-                                                  </div>
-                                                )}
-                                              </Card>
-                                            )
-                                          )}
+                                          {Object.entries(
+                                            (attempt.feedback as any).performanceAnalytics.byChapter
+                                          ).map(([chapter, data]: [string, any]) => (
+                                            <Card key={chapter} className="p-4">
+                                              <h5 className="font-medium mb-2">
+                                                {chapter}
+                                              </h5>
+                                              <Progress value={data.score} className="mb-2" />
+                                              <p className="text-sm text-muted-foreground mb-2">
+                                                Score: {data.score}%
+                                              </p>
+                                              {Array.isArray(data.recommendations) && (
+                                                <div className="text-sm">
+                                                  <strong>Recommendations:</strong>
+                                                  <ul className="list-disc pl-4 mt-1">
+                                                    {data.recommendations.map(
+                                                      (rec: string, i: number) => (
+                                                        <li key={i}>{rec}</li>
+                                                      )
+                                                    )}
+                                                  </ul>
+                                                </div>
+                                              )}
+                                            </Card>
+                                          ))}
                                         </div>
                                       </div>
                                     )}
