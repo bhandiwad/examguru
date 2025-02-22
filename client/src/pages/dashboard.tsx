@@ -434,10 +434,13 @@ export default function Dashboard() {
                           <FileTextIcon className="h-4 w-4" />
                           <span>Difficulty: {exam.difficulty}</span>
                         </div>
-                        {exam.templateId && (
+                        {exam.templateId && exam.templateData && (
                           <div className="flex items-center gap-2 text-sm">
                             <FileTextIcon className="h-4 w-4" />
-                            <span>Template: {exam.paperFormat || 'Standard Format'}</span>
+                            <span>Template: {exam.templateData.format || 'Standard Format'}</span>
+                            <span className="text-muted-foreground">
+                              ({exam.templateData.structure ? 'Custom Structure' : 'Default Structure'})
+                            </span>
                           </div>
                         )}
                         <div className="flex items-center gap-2 text-sm">
