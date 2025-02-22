@@ -706,15 +706,9 @@ export default function Dashboard() {
               <h2 className="text-xl font-semibold">AI Tutor Assistant</h2>
               <p className="text-muted-foreground">
                 Get personalized help with your studies. Ask questions about any
-                topic and receive detailed explanations tailored to your grade
-                level.
+                topic and receive detailed explanations tailored to your learning needs.
               </p>
-              {attempts && attempts[0] && (
-                <TutorChat
-                  subject={attempts[0].exam.subject}
-                  grade={attempts[0].exam.grade}
-                />
-              )}
+              <TutorChat />
             </div>
 
             <div className="space-y-4">
