@@ -18,6 +18,7 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
+  SheetPortal,
 } from "@/components/ui/sheet";
 import { SUBJECTS, GRADES, DIFFICULTIES } from "@shared/constants";
 import type { Attempt, Exam, EvaluationFeedback } from "@shared/schema";
@@ -153,84 +154,86 @@ export default function Dashboard() {
                 Filter Exams
               </Button>
             </SheetTrigger>
-            <SheetContent>
-              <SheetHeader>
-                <SheetTitle>Filter Exams</SheetTitle>
-                <SheetDescription>
-                  Filter exams by subject, grade, and difficulty level.
-                </SheetDescription>
-              </SheetHeader>
-              <div className="grid gap-4 py-4">
-                <div className="space-y-2">
-                  <h4 className="text-sm font-medium">Subject</h4>
-                  <Select
-                    value={selectedSubject}
-                    onValueChange={(value) => {
-                      setSelectedSubject(value);
-                      handleFilterChange();
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select subject" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="">All Subjects</SelectItem>
-                      {SUBJECTS.map((subject) => (
-                        <SelectItem key={subject} value={subject}>
-                          {subject}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+            <SheetPortal>
+              <SheetContent>
+                <SheetHeader>
+                  <SheetTitle>Filter Exams</SheetTitle>
+                  <SheetDescription>
+                    Filter exams by subject, grade, and difficulty level.
+                  </SheetDescription>
+                </SheetHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-medium">Subject</h4>
+                    <Select
+                      value={selectedSubject}
+                      onValueChange={(value) => {
+                        setSelectedSubject(value);
+                        handleFilterChange();
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select subject" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">All Subjects</SelectItem>
+                        {SUBJECTS.map((subject) => (
+                          <SelectItem key={subject} value={subject}>
+                            {subject}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                <div className="space-y-2">
-                  <h4 className="text-sm font-medium">Grade</h4>
-                  <Select
-                    value={selectedGrade}
-                    onValueChange={(value) => {
-                      setSelectedGrade(value);
-                      handleFilterChange();
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select grade" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="">All Grades</SelectItem>
-                      {GRADES.map((grade) => (
-                        <SelectItem key={grade} value={grade}>
-                          Grade {grade}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-medium">Grade</h4>
+                    <Select
+                      value={selectedGrade}
+                      onValueChange={(value) => {
+                        setSelectedGrade(value);
+                        handleFilterChange();
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select grade" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">All Grades</SelectItem>
+                        {GRADES.map((grade) => (
+                          <SelectItem key={grade} value={grade}>
+                            Grade {grade}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                <div className="space-y-2">
-                  <h4 className="text-sm font-medium">Difficulty</h4>
-                  <Select
-                    value={selectedDifficulty}
-                    onValueChange={(value) => {
-                      setSelectedDifficulty(value);
-                      handleFilterChange();
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select difficulty" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="">All Difficulties</SelectItem>
-                      {DIFFICULTIES.map((diff) => (
-                        <SelectItem key={diff} value={diff}>
-                          {diff}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-medium">Difficulty</h4>
+                    <Select
+                      value={selectedDifficulty}
+                      onValueChange={(value) => {
+                        setSelectedDifficulty(value);
+                        handleFilterChange();
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select difficulty" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">All Difficulties</SelectItem>
+                        {DIFFICULTIES.map((diff) => (
+                          <SelectItem key={diff} value={diff}>
+                            {diff}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-              </div>
-            </SheetContent>
+              </SheetContent>
+            </SheetPortal>
           </Sheet>
           <Link href="/add-template">
             <Button variant="outline">
