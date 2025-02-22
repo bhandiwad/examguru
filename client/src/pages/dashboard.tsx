@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { PlusCircle, FilePlus, Filter, ChevronDown } from "lucide-react";
+import { PlusCircle, FilePlus, Filter, ChevronDown, Loader2 } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -379,9 +379,19 @@ export default function Dashboard() {
                               variant="outline"
                               size="sm"
                               className="ml-2"
+                              disabled={adjustDifficultyMutation.isPending}
                             >
-                              <ChevronDown className="h-4 w-4 mr-1" />
-                              Difficulty: {exam.difficulty}
+                              {adjustDifficultyMutation.isPending ? (
+                                <>
+                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                  Adjusting...
+                                </>
+                              ) : (
+                                <>
+                                  <ChevronDown className="h-4 w-4 mr-1" />
+                                  Difficulty: {exam.difficulty}
+                                </>
+                              )}
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
@@ -389,7 +399,7 @@ export default function Dashboard() {
                               <DropdownMenuItem
                                 key={level}
                                 onClick={() => handleDifficultyChange(exam.id, level as DifficultyLevel)}
-                                disabled={level === exam.difficulty}
+                                disabled={level === exam.difficulty || adjustDifficultyMutation.isPending}
                               >
                                 {level}
                               </DropdownMenuItem>
