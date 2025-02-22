@@ -253,121 +253,50 @@ export async function generateQuestions(
 
 export async function evaluateAnswers(imageBase64: string, questions: any) {
   try {
-    const evaluationPrompt = `
-You are evaluating a mathematics exam. Here are the questions and student's answers:
-
-Questions with correct answers and rubrics: ${JSON.stringify(questions, null, 2)}
-Student's answer image is provided.
-
-Evaluation Rules:
-1. For MCQ questions:
-   - Compare student's selected option with the correct answer
-   - Award full marks for correct answers
-   - Zero marks for incorrect answers
-
-2. For theory/numerical questions:
-   - Check solution steps visible in the answer image
-   - Follow the provided rubric strictly
-   - Award partial marks based on correct steps
-   - Look for mathematical reasoning and proof
-
-3. For each question provide:
-   - Detailed scoring breakdown
-   - Specific feedback on mistakes
-   - Conceptual understanding assessment
-   - Improvement suggestions
-   - Topic-specific study resources including:
-     * Video tutorials from Khan Academy or similar platforms
-     * Interactive practice problems
-     * Relevant textbook sections or articles
-     * Online simulations or tools when applicable
-
-4. Learning recommendations should:
-   - Be specific to the topics where improvement is needed
-   - Include clear action items
-   - Link to concrete learning resources
-   - Suggest practice problems
-   - Consider the student's current understanding level
-
-Your evaluation must be detailed and provided in this EXACT JSON format:
-{
-  "score": number (0-100),
-  "feedback": {
-    "overall": {
-      "summary": "Brief overall assessment",
-      "strengths": ["strength1", "strength2"],
-      "areas_for_improvement": ["area1", "area2"],
-      "learning_recommendations": [
-        {
-          "topic": "string",
-          "recommendation": "string",
-          "resources": [
-            {
-              "type": "video|article|practice",
-              "title": "string",
-              "description": "string",
-              "link": "string (optional)"
-            }
-          ]
-        }
-      ]
-    },
-    "questions": [
-      {
-        "questionNumber": number,
-        "isCorrect": boolean,
-        "score": number,
-        "chapter": "string",
-        "topic": "string",
-        "conceptualUnderstanding": {
-          "level": "Excellent|Good|Fair|Needs Improvement",
-          "details": "string"
-        },
-        "misconceptions": ["string"],
-        "studyResources": [
-          {
-            "type": "video|article|practice",
-            "title": "string",
-            "description": "string",
-            "link": "string (optional)"
-          }
-        ]
-      }
-    ],
-    "performanceAnalytics": {
-      "byChapter": {
-        "chapterName": {
-          "score": number,
-          "topics": ["string"],
-          "recommendations": ["string"],
-          "resources": [
-            {
-              "type": "video|article|practice",
-              "title": "string",
-              "description": "string",
-              "link": "string (optional)"
-            }
-          ]
-        }
-      },
-      "difficultyAnalysis": {
-        "easy": number (0-100),
-        "medium": number (0-100),
-        "hard": number (0-100)
-      }
-    }
-  }
-}`;
-
-    const evaluationResponse = await openai.chat.completions.create({
-      model: "gpt-4-vision-preview",
+    const visionResponse = await openai.chat.completions.create({
+      model: "gpt-4o", 
       messages: [
         {
           role: "user",
           content: [
             {
               type: "text",
-              text: evaluationPrompt
+              text: `Analyze this exam answer image and evaluate it based on these questions:
+              ${JSON.stringify(questions, null, 2)}
+
+              Follow these evaluation rules:
+              1. For MCQ questions:
+                 - Compare student's selected option with correct answer
+                 - Award full marks for correct answers
+                 - Zero marks for incorrect answers
+
+              2. For theory/numerical questions:
+                 - Check solution steps visible in the answer image
+                 - Follow the provided rubric strictly
+                 - Award partial marks based on correct steps
+                 - Look for mathematical reasoning and proof
+
+              3. For each question provide:
+                 - Detailed scoring breakdown
+                 - Specific feedback on mistakes
+                 - Conceptual understanding assessment
+                 - Improvement suggestions
+                 - Topic-specific study resources
+
+              Provide the evaluation in JSON format with this structure:
+              {
+                "score": number (0-100),
+                "feedback": {
+                  "overall": {
+                    "summary": string,
+                    "strengths": string[],
+                    "areas_for_improvement": string[],
+                    "learning_recommendations": object[]
+                  },
+                  "questions": array of question feedback objects,
+                  "performanceAnalytics": {...}
+                }
+              }`
             },
             {
               type: "image_url",
@@ -383,12 +312,12 @@ Your evaluation must be detailed and provided in this EXACT JSON format:
       response_format: { type: "json_object" }
     });
 
-    if (!evaluationResponse.choices[0].message.content) {
+    if (!visionResponse.choices[0].message.content) {
       throw new Error("No evaluation content received");
     }
 
     try {
-      const parsedResponse = JSON.parse(evaluationResponse.choices[0].message.content);
+      const parsedResponse = JSON.parse(visionResponse.choices[0].message.content);
       console.log("Evaluation completed successfully:", parsedResponse);
       return parsedResponse;
     } catch (parseError) {
@@ -404,7 +333,7 @@ Your evaluation must be detailed and provided in this EXACT JSON format:
 export async function analyzeQuestionPaperTemplate(imageBase64: string) {
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-4-vision-preview",
+      model: "gpt-4o", 
       messages: [
         {
           role: "user",
@@ -418,7 +347,7 @@ export async function analyzeQuestionPaperTemplate(imageBase64: string) {
               3. Question types (MCQ, Theory, Numerical)
               4. Marks distribution
               5. Any special instructions or format rules
-              
+
               Provide the analysis in this exact JSON format:
               {
                 "sections": [
