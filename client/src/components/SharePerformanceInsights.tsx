@@ -73,7 +73,27 @@ export function SharePerformanceInsights({ attempts }: SharePerformanceProps) {
     },
     onSuccess: async (data) => {
       try {
-        await navigator.clipboard.writeText(data.shareLink);
+        // Try using the modern Clipboard API first
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(data.shareLink);
+        } else {
+          // Fallback for older browsers or non-HTTPS contexts
+          const textArea = document.createElement("textarea");
+          textArea.value = data.shareLink;
+          textArea.style.position = "fixed";
+          textArea.style.left = "-999999px";
+          textArea.style.top = "-999999px";
+          document.body.appendChild(textArea);
+          textArea.focus();
+          textArea.select();
+
+          try {
+            document.execCommand('copy');
+          } finally {
+            textArea.remove();
+          }
+        }
+
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
         toast({
@@ -81,9 +101,11 @@ export function SharePerformanceInsights({ attempts }: SharePerformanceProps) {
           description: "Share this link with parents or guardians",
         });
       } catch (error) {
+        console.error('Copy failed:', error);
+        // Show the link in the toast so users can copy manually
         toast({
-          title: "Couldn't copy to clipboard",
-          description: "The link was generated but couldn't be copied. Please try again.",
+          title: "Couldn't copy automatically",
+          description: `Please copy this link manually: ${data.shareLink}`,
           variant: "destructive",
         });
       }
