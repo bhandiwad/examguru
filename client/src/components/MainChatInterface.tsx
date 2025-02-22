@@ -21,12 +21,12 @@ export function MainChatInterface() {
     {
       role: "assistant",
       content: `Welcome to ExamGuru! I can help you with:
-      - Creating question templates
-      - Generating exams from templates
-      - Viewing performance analytics
-      - Getting personalized learning assistance
+- Creating question templates
+- Generating exams
+- Viewing performance analytics
+- Getting personalized learning assistance
 
-      What would you like to do?`,
+What would you like to help with today?`,
     },
   ]);
   const [input, setInput] = useState("");
@@ -69,11 +69,9 @@ export function MainChatInterface() {
     setInput("");
   };
 
-  // Format message content with code blocks, lists, and actions
   const formatMessage = (message: Message) => {
     let content = message.content;
 
-    // Split content by code blocks and other formatting
     const parts = content.split(/(```[\s\S]*?```)|(\n- .*)/g);
 
     return parts.map((part, index) => {
@@ -143,7 +141,6 @@ export function MainChatInterface() {
                         variant="secondary" 
                         size="sm"
                         onClick={() => {
-                          // Handle action click based on type
                           console.log("Action clicked:", message.action);
                         }}
                       >
