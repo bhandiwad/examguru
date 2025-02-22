@@ -4,6 +4,7 @@ import { Brain, CheckCircle2, AlertCircle, BookOpen, TrendingUp, Target } from "
 import { useQuery } from "@tanstack/react-query";
 import type { AttemptWithExam } from "@shared/schema";
 import { Progress } from "@/components/ui/progress";
+import { SharePerformanceInsights } from "./SharePerformanceInsights";
 
 interface StrengthsWeaknessProps {
   attempts: AttemptWithExam[];
@@ -114,10 +115,13 @@ export function StrengthsWeaknessAnalysis({ attempts }: StrengthsWeaknessProps) 
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Brain className="h-5 w-5" />
-            Comprehensive Skills Analysis
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Brain className="h-5 w-5" />
+              Comprehensive Skills Analysis
+            </CardTitle>
+            <SharePerformanceInsights attempts={attempts} />
+          </div>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -192,11 +196,11 @@ export function StrengthsWeaknessAnalysis({ attempts }: StrengthsWeaknessProps) 
                           {concept.proficiencyLevel}
                         </span>
                       </div>
-                      <Progress 
+                      <Progress
                         value={
                           concept.proficiencyLevel === "Expert" ? 100 :
-                          concept.proficiencyLevel === "Proficient" ? 75 : 50
-                        } 
+                            concept.proficiencyLevel === "Proficient" ? 75 : 50
+                        }
                         className={getProgressColor(concept.proficiencyLevel)}
                       />
                       <p className="text-sm text-muted-foreground">{concept.evidence}</p>

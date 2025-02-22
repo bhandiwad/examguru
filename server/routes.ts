@@ -4,6 +4,8 @@ import multer from "multer";
 import { storage } from "./storage";
 import { generateQuestions, evaluateAnswers, analyzeQuestionPaperTemplate, generateTutorResponse, adjustQuestionDifficulty, analyzeStudentSkills } from "./openai";
 import { insertExamSchema, insertAttemptSchema, insertQuestionTemplateSchema } from "@shared/schema";
+import { createTransport } from "nodemailer";
+import { randomUUID } from "crypto";
 
 // Configure multer for handling file uploads
 const upload = multer({
@@ -511,6 +513,128 @@ export async function registerRoutes(app: Express) {
       console.error("Error analyzing student skills:", error);
       res.status(500).json({
         message: "Failed to analyze student skills",
+        error: error.message
+      });
+    }
+  });
+
+  app.post("/api/share/performance", async (req, res) => {
+    try {
+      const { attemptIds, shareMethod, recipientEmail } = req.body;
+
+      if (!attemptIds || !Array.isArray(attemptIds) || !attemptIds.length) {
+        return res.status(400).json({ message: "No attempts specified" });
+      }
+
+      // Get attempts with analysis
+      const attempts = await Promise.all(
+        attemptIds.map(id => storage.getAttemptWithExam(id))
+      );
+      const validAttempts = attempts.filter(a => a !== null);
+
+      if (!validAttempts.length) {
+        return res.status(404).json({ message: "No valid attempts found" });
+      }
+
+      const analysis = await analyzeStudentSkills(validAttempts);
+
+      if (shareMethod === "email" && recipientEmail) {
+        // Configure email transport
+        const transporter = createTransport({
+          host: process.env.SMTP_HOST || "smtp.gmail.com",
+          port: parseInt(process.env.SMTP_PORT || "587"),
+          secure: false,
+          auth: {
+            user: process.env.SMTP_USER,
+            pass: process.env.SMTP_PASS
+          }
+        });
+
+        // Generate HTML email content
+        const emailContent = `
+          <h1>Student Performance Insights</h1>
+          <div>
+            <h2>Cognitive Skills</h2>
+            <h3>Strengths</h3>
+            <ul>
+              ${analysis.cognitiveSkills.strengths.map(s => `
+                <li>
+                  <strong>${s.skill}</strong> (${s.impactLevel} Impact)<br>
+                  ${s.evidence}
+                </li>
+              `).join('')}
+            </ul>
+
+            <h3>Areas for Improvement</h3>
+            <ul>
+              ${analysis.cognitiveSkills.areasForImprovement.map(a => `
+                <li>
+                  <strong>${a.skill}</strong><br>
+                  Current Level: ${a.currentLevel}<br>
+                  Suggested Approach: ${a.suggestedApproach}
+                </li>
+              `).join('')}
+            </ul>
+          </div>
+
+          <div>
+            <h2>Subject Mastery</h2>
+            ${analysis.subjectSkills.masteredConcepts.map(c => `
+              <div>
+                <h3>${c.concept} - ${c.proficiencyLevel}</h3>
+                <p>${c.evidence}</p>
+              </div>
+            `).join('')}
+          </div>
+
+          <div>
+            <h2>Recommendations</h2>
+            ${analysis.personalizedRecommendations.map(r => `
+              <div>
+                <h3>${r.focus}</h3>
+                <ul>
+                  ${r.actionItems.map(item => `<li>${item}</li>`).join('')}
+                </ul>
+                <h4>Recommended Resources:</h4>
+                <ul>
+                  ${r.resources.map(resource => `
+                    <li>
+                      <strong>${resource.title}</strong><br>
+                      ${resource.description}
+                    </li>
+                  `).join('')}
+                </ul>
+              </div>
+            `).join('')}
+          </div>
+        `;
+
+        await transporter.sendMail({
+          from: process.env.SMTP_USER,
+          to: recipientEmail,
+          subject: "Student Performance Insights Report",
+          html: emailContent
+        });
+
+        res.json({ message: "Performance insights shared via email" });
+      } else if (shareMethod === "link") {
+        // Generate a unique share token
+        const shareToken = randomUUID();
+
+        // Store the analysis with the token (you might want to implement this in storage.ts)
+        await storage.storeSharedAnalysis(shareToken, analysis);
+
+        // Generate shareable link
+        const shareLink = `${process.env.APP_URL || req.get('origin')}/shared/performance/${shareToken}`;
+
+        res.json({ shareLink });
+      } else {
+        res.status(400).json({ message: "Invalid share method" });
+      }
+    } catch (error: any) {
+      console.error("Error sharing performance insights:", error);
+      res.status(500).json({
+        message: "Failed to share performance insights",
         error: error.message
       });
     }

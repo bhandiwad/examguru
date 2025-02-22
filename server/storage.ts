@@ -28,6 +28,8 @@ export interface IStorage {
   trackAchievementProgress(data: InsertUserAchievement): Promise<UserAchievement>;
   checkAndAwardAchievements(userId: number): Promise<Achievement[]>;
   getAttemptWithExam(id: number): Promise<(Attempt & { exam: Exam }) | null>;
+  storeSharedAnalysis(token: string, analysis: any): Promise<void>;
+  getSharedAnalysis(token: string): Promise<any | null>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -272,6 +274,34 @@ export class DatabaseStorage implements IStorage {
       ...attempt,
       exam
     };
+  }
+  private sharedAnalysisCache = new Map<string, { analysis: any, timestamp: number }>();
+  private readonly CACHE_EXPIRY = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
+
+  async storeSharedAnalysis(token: string, analysis: any): Promise<void> {
+    this.sharedAnalysisCache.set(token, {
+      analysis,
+      timestamp: Date.now()
+    });
+
+    // Clean up expired entries
+    for (const [key, value] of this.sharedAnalysisCache.entries()) {
+      if (Date.now() - value.timestamp > this.CACHE_EXPIRY) {
+        this.sharedAnalysisCache.delete(key);
+      }
+    }
+  }
+
+  async getSharedAnalysis(token: string): Promise<any | null> {
+    const cached = this.sharedAnalysisCache.get(token);
+    if (!cached) return null;
+
+    if (Date.now() - cached.timestamp > this.CACHE_EXPIRY) {
+      this.sharedAnalysisCache.delete(token);
+      return null;
+    }
+
+    return cached.analysis;
   }
 }
 
