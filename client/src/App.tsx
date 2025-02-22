@@ -2,7 +2,7 @@ import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
-import { MainChatInterface } from "@/components/MainChatInterface";
+import { TutorChat } from "@/components/TutorChat";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Bot } from "lucide-react";
@@ -27,7 +27,7 @@ const ChatButton = () => (
       </Button>
     </DialogTrigger>
     <DialogContent className="max-w-4xl h-[80vh] p-0">
-      <MainChatInterface />
+      <TutorChat />
     </DialogContent>
   </Dialog>
 );

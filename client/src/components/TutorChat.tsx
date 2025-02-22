@@ -13,7 +13,7 @@ interface Message {
   content: string;
 }
 
-export function TutorChat({ subject, grade }: { subject: string; grade: string }) {
+export function TutorChat({ subject, grade }: { subject?: string; grade?: string }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -57,40 +57,12 @@ export function TutorChat({ subject, grade }: { subject: string; grade: string }
     setInput("");
   };
 
-  // Format code blocks and mathematical expressions
-  const formatMessage = (content: string) => {
-    // Split content by code blocks (if any)
-    const parts = content.split(/(```[\s\S]*?```)/g);
-    return parts.map((part, index) => {
-      if (part.startsWith("```") && part.endsWith("```")) {
-        // Remove the backticks and language identifier
-        const code = part.slice(3, -3).replace(/^[a-z]+\n/, '');
-        return (
-          <pre key={index} className="bg-muted p-4 rounded-md my-2 overflow-x-auto">
-            <code>{code}</code>
-          </pre>
-        );
-      }
-      // Format inline math expressions (e.g., $x^2$)
-      return part.split(/(\$[^$]+\$)/g).map((text, mathIndex) => {
-        if (text.startsWith('$') && text.endsWith('$')) {
-          return (
-            <span key={`${index}-${mathIndex}`} className="font-mono text-primary">
-              {text.slice(1, -1)}
-            </span>
-          );
-        }
-        return <span key={`${index}-${mathIndex}`}>{text}</span>;
-      });
-    });
-  };
-
   return (
     <Card className="flex flex-col min-h-[600px] max-h-[calc(100vh-8rem)]">
       <CardHeader className="border-b">
         <CardTitle className="flex items-center gap-2">
           <MessageSquare className="h-5 w-5" />
-          AI Tutor - {subject} (Grade {grade})
+          {subject && grade ? `AI Tutor - ${subject} (Grade ${grade})` : 'ExamGuru AI Assistant'}
         </CardTitle>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col p-0">
@@ -104,7 +76,9 @@ export function TutorChat({ subject, grade }: { subject: string; grade: string }
           <div className="space-y-4 py-4">
             {messages.length === 0 && (
               <div className="text-center text-muted-foreground py-8">
-                Ask me anything about {subject}! I'm here to help you learn and understand better.
+                {subject && grade 
+                  ? `Ask me anything about ${subject}! I'm here to help you learn and understand better.`
+                  : "Hi! I'm your ExamGuru AI Assistant. How can I help you today?"}
               </div>
             )}
             {messages.map((message, i) => (
@@ -137,7 +111,7 @@ export function TutorChat({ subject, grade }: { subject: string; grade: string }
                         : "bg-secondary/50"
                     }`}
                   >
-                    {formatMessage(message.content)}
+                    {message.content}
                   </div>
                 </div>
               </div>
