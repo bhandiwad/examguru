@@ -27,6 +27,7 @@ export interface IStorage {
   getUserAchievements(userId: number): Promise<(UserAchievement & { achievement: Achievement })[]>;
   trackAchievementProgress(data: InsertUserAchievement): Promise<UserAchievement>;
   checkAndAwardAchievements(userId: number): Promise<Achievement[]>;
+  getAttemptWithExam(id: number): Promise<(Attempt & { exam: Exam }) | null>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -252,6 +253,25 @@ export class DatabaseStorage implements IStorage {
     }
 
     return newlyEarnedAchievements;
+  }
+  async getAttemptWithExam(id: number): Promise<(Attempt & { exam: Exam }) | null> {
+    const result = await db
+      .select({
+        attempt: attempts,
+        exam: exams
+      })
+      .from(attempts)
+      .where(eq(attempts.id, id))
+      .innerJoin(exams, eq(attempts.examId, exams.id))
+      .limit(1);
+
+    if (!result.length) return null;
+
+    const { attempt, exam } = result[0];
+    return {
+      ...attempt,
+      exam
+    };
   }
 }
 

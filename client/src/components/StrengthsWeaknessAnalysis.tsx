@@ -8,8 +8,14 @@ interface StrengthsWeaknessProps {
   attempts: AttemptWithExam[];
 }
 
+interface AnalysisResponse {
+  strengths: string[];
+  areasForImprovement: string[];
+  recommendations: string[];
+}
+
 export function StrengthsWeaknessAnalysis({ attempts }: StrengthsWeaknessProps) {
-  const { data: analysis, isLoading } = useQuery({
+  const { data: analysis, isLoading } = useQuery<AnalysisResponse>({
     queryKey: ["/api/analysis/student-skills", attempts.map(a => a.id)],
     enabled: attempts.length > 0,
   });
