@@ -86,22 +86,22 @@ export function TutorChat({ subject, grade }: { subject: string; grade: string }
   };
 
   return (
-    <Card className="h-[600px] flex flex-col">
+    <Card className="flex flex-col min-h-[600px] max-h-[calc(100vh-8rem)]">
       <CardHeader className="border-b">
         <CardTitle className="flex items-center gap-2">
           <MessageSquare className="h-5 w-5" />
           AI Tutor - {subject} (Grade {grade})
         </CardTitle>
       </CardHeader>
-      <CardContent className="flex-1 flex flex-col gap-4 p-4">
+      <CardContent className="flex-1 flex flex-col p-0">
         {error && (
-          <Alert variant="destructive">
+          <Alert variant="destructive" className="m-4 mb-0">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
-        <ScrollArea className="flex-1 pr-4 -mr-4">
-          <div className="space-y-4">
+        <ScrollArea className="flex-1 h-full px-4">
+          <div className="space-y-4 py-4">
             {messages.length === 0 && (
               <div className="text-center text-muted-foreground py-8">
                 Ask me anything about {subject}! I'm here to help you learn and understand better.
@@ -150,7 +150,7 @@ export function TutorChat({ subject, grade }: { subject: string; grade: string }
             )}
           </div>
         </ScrollArea>
-        <form onSubmit={handleSubmit} className="flex gap-2 pt-2 border-t">
+        <form onSubmit={handleSubmit} className="flex gap-2 p-4 mt-auto border-t">
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
