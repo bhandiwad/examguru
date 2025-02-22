@@ -13,6 +13,20 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
 });
 
+// Placeholder functions - replace with actual implementations
+async function parseCommand(message: string): Promise<{ type: string; data: any }> {
+  // Implement command parsing logic here
+  // This is a placeholder, replace with your actual parsing logic
+  return { type: "unknown", data: {} };
+}
+
+async function generateResponse(command: { type: string; data: any }, message: string): Promise<string> {
+  // Implement response generation logic here based on the command
+  // This is a placeholder, replace with your actual response generation logic
+  return "I don't understand that command yet.";
+}
+
+
 export async function registerRoutes(app: Express) {
   // Template management routes
   app.get("/api/templates", async (req, res) => {
@@ -516,7 +530,41 @@ export async function registerRoutes(app: Express) {
     }
   });
 
-  // Add the new route here
+  // Add this new route after the existing /api/chat endpoint
+  app.post("/api/chat/command", async (req, res) => {
+    try {
+      const { message, history } = req.body;
+
+      if (!message) {
+        return res.status(400).json({
+          message: "Missing required fields"
+        });
+      }
+
+      // Parse the command to understand user intent
+      const command = await parseCommand(message);
+
+      // Generate appropriate response based on the command
+      const responseContent = await generateResponse(command, message);
+
+      // Return response with action if applicable
+      res.json({
+        role: "assistant",
+        content: responseContent,
+        action: command.type !== "unknown" ? {
+          type: command.type,
+          data: command.data
+        } : undefined
+      });
+    } catch (error: any) {
+      console.error("Error in chat command endpoint:", error);
+      res.status(500).json({
+        message: "Failed to process command",
+        error: error.message
+      });
+    }
+  });
+
   app.post("/api/exams/:id/adjust-difficulty", async (req, res) => {
     try {
       const examId = parseInt(req.params.id);
