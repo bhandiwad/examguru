@@ -36,19 +36,31 @@ What would you like to help with today?`,
     mutationFn: async (message: string) => {
       try {
         setError(null);
-        const response = await apiRequest("POST", "/api/chat/command", {
+        const response = await apiRequest("POST", "/api/chat", {
           message,
-          history: messages.slice(-10) // Send last 10 messages for context
+          history: messages.map(msg => ({
+            role: msg.role,
+            content: msg.content
+          }))
         });
-        return response.json();
+        const data = await response.json();
+        return {
+          role: "assistant" as const,
+          content: data.response,
+          action: data.action
+        };
       } catch (error: any) {
         setError(error.message || "Failed to send message. Please try again.");
         throw error;
       }
     },
     onSuccess: (data) => {
-      setMessages(prev => [...prev, data]);
+      setMessages(prev => [...prev, {
+        role: "user",
+        content: input
+      }, data]);
       setError(null);
+      setInput("");
     },
     onError: (error: Error) => {
       setError(error.message || "Failed to send message. Please try again.");
@@ -58,15 +70,7 @@ What would you like to help with today?`,
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || chatMutation.isPending) return;
-
-    const userMessage: Message = {
-      role: "user",
-      content: input
-    };
-
-    setMessages(prev => [...prev, userMessage]);
     chatMutation.mutate(input);
-    setInput("");
   };
 
   const formatMessage = (message: Message) => {

@@ -460,9 +460,9 @@ export async function registerRoutes(app: Express) {
     try {
       const { message, subject, grade, history } = req.body;
 
-      if (!message || !subject || !grade) {
+      if (!message) {
         return res.status(400).json({
-          message: "Missing required fields"
+          message: "Message is required"
         });
       }
 
@@ -470,40 +470,48 @@ export async function registerRoutes(app: Express) {
       const userId = 1; // TODO: Get from authenticated session
       const attempts = await storage.getAttempts(userId);
 
-      // Analyze performance data for the specific subject
-      const subjectAttempts = attempts.filter(attempt => attempt.exam.subject === subject);
-
       // Initialize the chat history array
       const chatHistory = history || [];
 
       // Only add performance context if there are attempts
-      if (subjectAttempts.length > 0) {
-        // Calculate average score safely
-        const totalScore = subjectAttempts.reduce((sum, attempt) => {
-          return sum + (attempt.score || 0);
-        }, 0);
-        const averageScore = (totalScore / subjectAttempts.length).toFixed(1);
+      if (attempts.length > 0) {
+        // If subject is provided, filter attempts for that subject
+        const relevantAttempts = subject
+          ? attempts.filter(attempt => attempt.exam.subject === subject)
+          : attempts;
 
-        // Get the most recent attempt's feedback safely
-        const latestAttempt = subjectAttempts[0];
-        const strengths = latestAttempt?.feedback?.overall?.strengths || [];
-        const improvements = latestAttempt?.feedback?.overall?.areas_for_improvement || [];
+        if (relevantAttempts.length > 0) {
+          // Calculate average score safely
+          const totalScore = relevantAttempts.reduce((sum, attempt) => {
+            return sum + (attempt.score || 0);
+          }, 0);
+          const averageScore = (totalScore / relevantAttempts.length).toFixed(1);
 
-        // Add performance context as system message
-        chatHistory.unshift({
-          role: "system",
-          content: `Student's performance context for ${subject}:
-          - Number of attempts: ${subjectAttempts.length}
-          - Average score: ${averageScore}%
-          - Recent strengths: ${strengths.length ? strengths.join(", ") : "No data available"}
-          - Areas for improvement: ${improvements.length ? improvements.join(", ") : "No data available"}`
-        });
+          // Get the most recent attempt's feedback safely
+          const latestAttempt = relevantAttempts[0];
+          const strengths = latestAttempt?.feedback?.overall?.strengths || [];
+          const improvements = latestAttempt?.feedback?.overall?.areas_for_improvement || [];
+
+          // Add performance context as system message
+          chatHistory.unshift({
+            role: "system",
+            content: subject && grade
+              ? `Student's performance context for ${subject} (Grade ${grade}):
+                - Number of attempts: ${relevantAttempts.length}
+                - Average score: ${averageScore}%
+                - Recent strengths: ${strengths.length ? strengths.join(", ") : "No data available"}
+                - Areas for improvement: ${improvements.length ? improvements.join(", ") : "No data available"}`
+              : `Student's overall performance context:
+                - Total attempts: ${relevantAttempts.length}
+                - Average score across subjects: ${averageScore}%`
+          });
+        }
       }
 
       const response = await generateTutorResponse(
         message,
-        subject,
-        grade,
+        subject || '',
+        grade || '',
         chatHistory
       );
 

@@ -254,7 +254,7 @@ export async function generateQuestions(
 export async function evaluateAnswers(imageBase64: string, questions: any) {
   try {
     const visionResponse = await openai.chat.completions.create({
-      model: "gpt-4o", 
+      model: "gpt-4o",
       messages: [
         {
           role: "user",
@@ -333,7 +333,7 @@ export async function evaluateAnswers(imageBase64: string, questions: any) {
 export async function analyzeQuestionPaperTemplate(imageBase64: string) {
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-4o", 
+      model: "gpt-4o",
       messages: [
         {
           role: "user",
@@ -397,35 +397,31 @@ export async function generateTutorResponse(
   history: { role: string; content: string }[]
 ) {
   try {
-    const systemPrompt = `You are an expert tutor specializing in ${subject} for Grade ${grade} students.
-    Your role is to:
-    1. Provide clear, age-appropriate explanations
-    2. Break down complex concepts into simpler terms
-    3. Use examples and analogies relevant to the student's grade level
-    4. Guide students to understand concepts rather than just giving answers
-    5. Encourage critical thinking and problem-solving
-    6. Maintain a supportive and encouraging tone
-    7. Provide step-by-step explanations when solving problems
-    8. Reference relevant curriculum concepts and learning objectives
-    9. Suggest specific practice exercises when appropriate
-    10. Include links to relevant Khan Academy or similar educational resources
-
-    Format your responses to include:
-    1. Direct answer to the student's question
-    2. Step-by-step explanation if it's a problem
-    3. Real-world examples or analogies
-    4. Practice suggestions
-    5. Links to additional resources
-
-    Remember:
-    - Keep explanations concise but thorough
-    - Use encouraging language
-    - If a student is struggling, break down the concept into smaller parts
-    - Suggest additional resources when appropriate
-    - If a student asks for direct homework answers, guide them through the problem-solving process instead
-    - Use grade-appropriate language and examples
-    - Relate concepts to everyday experiences
-    - Encourage students to think through problems themselves`;
+    const systemPrompt = subject && grade
+      ? `You are an expert tutor specializing in ${subject} for Grade ${grade} students.
+        Your role is to:
+        1. Provide clear, age-appropriate explanations
+        2. Break down complex concepts into simpler terms
+        3. Use examples and analogies relevant to the student's grade level
+        4. Guide students to understand concepts rather than just giving answers
+        5. Encourage critical thinking and problem-solving
+        6. Maintain a supportive and encouraging tone
+        7. Provide step-by-step explanations when solving problems
+        8. Reference relevant curriculum concepts and learning objectives
+        9. Suggest specific practice exercises when appropriate
+        10. Include links to relevant Khan Academy or similar educational resources`
+      : `You are ExamGuru's AI Assistant, specialized in education and learning.
+        Your role is to:
+        1. Help users navigate the ExamGuru platform
+        2. Provide guidance on exam creation and management
+        3. Offer study tips and learning strategies
+        4. Help interpret performance analytics
+        5. Suggest ways to improve learning outcomes
+        6. Guide users in creating effective question templates
+        7. Help understand different exam formats and structures
+        8. Provide general academic advice and study techniques
+        9. Assist with educational resource recommendations
+        10. Maintain a helpful and encouraging tone`;
 
     // Ensure messages are properly formatted for the OpenAI API
     const messages = [
