@@ -70,6 +70,7 @@ export async function registerRoutes(app: Express) {
 
   app.post("/api/templates", async (req, res) => {
     try {
+      console.log("Creating template with data:", req.body);
       const validation = insertQuestionTemplateSchema.safeParse(req.body);
       if (!validation.success) {
         return res.status(400).json({
@@ -110,7 +111,7 @@ export async function registerRoutes(app: Express) {
   });
 
 
-  // Modified exam creation to use custom templates
+  // Modified exam creation to handle expanded curricula and subjects
   app.post("/api/exams", async (req, res) => {
     try {
       console.log("Received exam creation request:", req.body);
@@ -127,16 +128,15 @@ export async function registerRoutes(app: Express) {
       // TODO: Add proper authentication middleware
       const userId = 1; // Temporary for testing
 
-      // Get relevant templates
+      // Get relevant templates for the specific curriculum and subject
       const templates = await storage.getTemplates({
         curriculum: validation.data.curriculum,
         subject: validation.data.subject,
         grade: validation.data.grade
       });
 
-      console.log("Found templates:", templates.length);
+      console.log(`Found ${templates.length} relevant templates for ${validation.data.curriculum} - ${validation.data.subject}`);
 
-      // Get selected custom template if specified
       let selectedTemplate;
       if (validation.data.templateId) {
         selectedTemplate = await storage.getTemplateById(validation.data.templateId);
@@ -450,7 +450,7 @@ export async function registerRoutes(app: Express) {
 
       const validDifficulties = ["Beginner", "Foundation", "Easy", "Medium", "Advanced", "Hard", "Expert", "Olympiad"];
       if (!validDifficulties.includes(newDifficulty)) {
-        return res.status(400).json({ 
+        return res.status(400).json({
           message: "Invalid difficulty level",
           validLevels: validDifficulties
         });

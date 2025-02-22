@@ -1,5 +1,6 @@
 import { pgTable, text, serial, integer, boolean, jsonb, timestamp } from "drizzle-orm/pg-core";
 import { z } from "zod";
+import { CURRICULA, DIFFICULTIES, GRADES, SUBJECTS } from "./constants";
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -35,40 +36,11 @@ export const exams = pgTable("exams", {
   createdAt: timestamp("created_at").notNull().defaultNow()
 });
 
-export const attempts = pgTable("attempts", {
-  id: serial("id").primaryKey(),
-  examId: integer("exam_id").notNull(),
-  userId: integer("user_id").notNull(),
-  startTime: timestamp("start_time").notNull(),
-  endTime: timestamp("end_time"),
-  answerImageUrl: text("answer_image_url"),
-  score: integer("score"),
-  feedback: jsonb("feedback")
-});
-
-export const achievements = pgTable("achievements", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  description: text("description").notNull(),
-  type: text("type").notNull(), // e.g., "EXAM_SCORE", "STREAK", "SUBJECT_MASTERY"
-  requirement: jsonb("requirement").notNull(), // e.g., { "score": 90, "examCount": 5 }
-  badgeIcon: text("badge_icon").notNull(), // SVG string for the badge
-  points: integer("points").notNull(),
-  createdAt: timestamp("created_at").notNull().defaultNow()
-});
-
-export const userAchievements = pgTable("user_achievements", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull(),
-  achievementId: integer("achievement_id").notNull(),
-  earnedAt: timestamp("earned_at").notNull().defaultNow(),
-  progress: jsonb("progress").notNull(), // Track progress towards achievement
-});
-
+// Update validation schemas to use the constants
 export const insertQuestionTemplateSchema = z.object({
-  curriculum: z.string().min(1, "Curriculum is required"),
-  subject: z.string().min(1, "Subject is required"),
-  grade: z.string().min(1, "Grade is required"),
+  curriculum: z.enum(CURRICULA),
+  subject: z.enum(SUBJECTS),
+  grade: z.enum(GRADES),
   type: z.string().min(1, "Question type is required"),
   institution: z.string().optional(),
   paperFormat: z.string().optional(),
@@ -94,10 +66,10 @@ export const insertQuestionTemplateSchema = z.object({
 });
 
 export const insertExamSchema = z.object({
-  curriculum: z.string().min(1, "Curriculum is required"),
-  subject: z.string().min(1, "Subject is required"),
-  grade: z.string().min(1, "Grade is required"),
-  difficulty: z.string().min(1, "Difficulty is required"),
+  curriculum: z.enum(CURRICULA),
+  subject: z.enum(SUBJECTS),
+  grade: z.enum(GRADES),
+  difficulty: z.enum(DIFFICULTIES),
   format: z.object({
     totalMarks: z.number(),
     sections: z.array(z.object({
@@ -193,3 +165,33 @@ export type InsertUserAchievement = z.infer<typeof userAchievementSchema>;
 
 // Add after the export type declarations at the end of the file
 export type AttemptWithExam = Attempt & { exam: Exam };
+
+export const attempts = pgTable("attempts", {
+  id: serial("id").primaryKey(),
+  examId: integer("exam_id").notNull(),
+  userId: integer("user_id").notNull(),
+  startTime: timestamp("start_time").notNull(),
+  endTime: timestamp("end_time"),
+  answerImageUrl: text("answer_image_url"),
+  score: integer("score"),
+  feedback: jsonb("feedback")
+});
+
+export const achievements = pgTable("achievements", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  type: text("type").notNull(), // e.g., "EXAM_SCORE", "STREAK", "SUBJECT_MASTERY"
+  requirement: jsonb("requirement").notNull(), // e.g., { "score": 90, "examCount": 5 }
+  badgeIcon: text("badge_icon").notNull(), // SVG string for the badge
+  points: integer("points").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow()
+});
+
+export const userAchievements = pgTable("user_achievements", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  achievementId: integer("achievement_id").notNull(),
+  earnedAt: timestamp("earned_at").notNull().defaultNow(),
+  progress: jsonb("progress").notNull(), // Track progress towards achievement
+});
