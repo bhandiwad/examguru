@@ -86,8 +86,7 @@ function QuestionFeedback({ feedback }: { feedback: any }) {
           <strong>Topic:</strong> {feedback.topic}
         </p>
         <p>
-          <strong>Understanding Level:</strong>{" "}
-          {feedback.conceptualUnderstanding.level}
+          <strong>Understanding Level:</strong> {feedback.conceptualUnderstanding.level}
         </p>
         <p>{feedback.conceptualUnderstanding.details}</p>
 
@@ -142,15 +141,35 @@ export default function Dashboard() {
   const [currentPage, setCurrentPage] = useState(1);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
-  const { data: attempts, isLoading: attemptsLoading } = useQuery<
-    AttemptWithExam[]
-  >({
+  const { data: attempts, isLoading: attemptsLoading } = useQuery<AttemptWithExam[]>({
     queryKey: ["/api/attempts"],
   });
 
   const { data: exams, isLoading: examsLoading } = useQuery<Exam[]>({
     queryKey: ["/api/exams"],
   });
+
+  const adjustDifficultyMutation = useMutation({
+    mutationFn: async ({ examId, newDifficulty }: { examId: number; newDifficulty: DifficultyLevel }) => {
+      const response = await apiRequest(
+        "POST",
+        `/api/exams/${examId}/adjust-difficulty`,
+        { newDifficulty }
+      );
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/exams"] });
+    },
+    onError: (error) => {
+      console.error("Error adjusting difficulty:", error);
+      alert("Error adjusting difficulty. Please try again later.");
+    }
+  });
+
+  const handleDifficultyChange = (examId: number, newDifficulty: DifficultyLevel) => {
+    adjustDifficultyMutation.mutate({ examId, newDifficulty });
+  };
 
   const isLoading = attemptsLoading || examsLoading;
 
@@ -369,35 +388,7 @@ export default function Dashboard() {
                             {["Easy", "Medium", "Hard"].map((level) => (
                               <DropdownMenuItem
                                 key={level}
-                                onClick={() => {
-                                  const adjustDifficultyMutation = useMutation({
-                                    mutationFn: async () => {
-                                      try {
-                                        const response = await apiRequest(
-                                          "POST",
-                                          `/api/exams/${exam.id}/adjust-difficulty`,
-                                          { newDifficulty: level }
-                                        );
-                                        return response.json();
-                                      } catch (error) {
-                                        console.error(
-                                          "Error adjusting difficulty:",
-                                          error
-                                        );
-                                        // Optionally display an error message to the user
-                                        alert("Error adjusting difficulty. Please try again later.")
-                                      }
-                                    },
-                                    onSuccess: () => {
-                                      queryClient.invalidateQueries(["/api/exams"]);
-                                    },
-                                    onError: (error) => {
-                                      console.error("Error:", error);
-                                      alert("Error adjusting difficulty. Please try again later.")
-                                    }
-                                  });
-                                  adjustDifficultyMutation.mutate();
-                                }}
+                                onClick={() => handleDifficultyChange(exam.id, level as DifficultyLevel)}
                                 disabled={level === exam.difficulty}
                               >
                                 {level}
