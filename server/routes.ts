@@ -518,6 +518,7 @@ export async function registerRoutes(app: Express) {
     }
   });
 
+  // Update the share performance route to handle undefined values
   app.post("/api/share/performance", async (req, res) => {
     try {
       const { attemptIds, shareMethod, recipientEmail } = req.body;
@@ -536,7 +537,7 @@ export async function registerRoutes(app: Express) {
         return res.status(404).json({ message: "No valid attempts found" });
       }
 
-      // Use the existing feedback from attempts instead of regenerating analysis
+      // Initialize the analysis structure with empty arrays
       const analysis = {
         cognitiveSkills: {
           strengths: [],
@@ -546,52 +547,83 @@ export async function registerRoutes(app: Express) {
           masteredConcepts: [],
           challengingAreas: []
         },
+        progressAnalysis: {
+          improvements: [],
+          consistentStrengths: [],
+          growthAreas: []
+        },
+        learningStyle: {
+          primaryStyle: "Visual",
+          effectiveStrategies: [],
+          adaptationNeeds: []
+        },
         personalizedRecommendations: []
       };
 
       // Aggregate existing feedback from attempts
       validAttempts.forEach(attempt => {
-        if (attempt.feedback) {
-          // Add overall feedback
-          if (attempt.feedback.overall) {
-            const { strengths, areas_for_improvement } = attempt.feedback.overall;
-            analysis.cognitiveSkills.strengths.push(
-              ...strengths.map(s => ({
+        if (attempt?.feedback?.overall) {
+          const { strengths = [], areas_for_improvement = [] } = attempt.feedback.overall;
+
+          // Add strengths
+          strengths.forEach(s => {
+            if (s) {
+              analysis.cognitiveSkills.strengths.push({
                 skill: s,
                 evidence: `Demonstrated in ${attempt.exam.subject}`,
                 impactLevel: "High"
-              }))
-            );
-            analysis.cognitiveSkills.areasForImprovement.push(
-              ...areas_for_improvement.map(a => ({
+              });
+            }
+          });
+
+          // Add areas for improvement
+          areas_for_improvement.forEach(a => {
+            if (a) {
+              analysis.cognitiveSkills.areasForImprovement.push({
                 skill: a,
                 currentLevel: "Needs Improvement",
                 suggestedApproach: `Focus on this area in ${attempt.exam.subject}`
-              }))
-            );
-          }
+              });
+            }
+          });
+        }
 
-          // Add per-question feedback
-          if (attempt.feedback.perQuestion) {
-            attempt.feedback.perQuestion.forEach(q => {
-              if (q.conceptualUnderstanding.level === "Good") {
-                analysis.subjectSkills.masteredConcepts.push({
-                  concept: q.keyConceptsCovered[0],
-                  proficiencyLevel: "Proficient",
-                  evidence: q.conceptualUnderstanding.details
-                });
-              }
-              if (q.improvementAreas?.length) {
-                analysis.subjectSkills.challengingAreas.push({
-                  concept: q.keyConceptsCovered[0],
-                  gap: q.misconceptions?.[0] || "Needs review",
-                  recommendedResources: q.improvementAreas
-                });
-              }
-            });
-          }
+        // Add per-question feedback
+        if (attempt?.feedback?.perQuestion) {
+          attempt.feedback.perQuestion.forEach(q => {
+            if (q?.conceptualUnderstanding?.level === "Good" && q?.keyConceptsCovered?.length) {
+              analysis.subjectSkills.masteredConcepts.push({
+                concept: q.keyConceptsCovered[0],
+                proficiencyLevel: "Proficient",
+                evidence: q.conceptualUnderstanding.details || "Good understanding demonstrated"
+              });
+            }
+
+            if (q?.improvementAreas?.length && q?.keyConceptsCovered?.length) {
+              analysis.subjectSkills.challengingAreas.push({
+                concept: q.keyConceptsCovered[0],
+                gap: q?.misconceptions?.[0] || "Needs review",
+                recommendedResources: q.improvementAreas
+              });
+            }
+          });
         }
       });
+
+      // Add a default recommendation if none exist
+      if (analysis.personalizedRecommendations.length === 0) {
+        analysis.personalizedRecommendations.push({
+          focus: "General Improvement",
+          actionItems: ["Review past exam questions", "Practice regularly"],
+          resources: [{
+            type: "Practice",
+            title: "Practice Questions",
+            description: "Work through sample questions to improve understanding",
+            link: "#"
+          }],
+          expectedOutcome: "Improved overall performance"
+        });
+      }
 
       // Continue with email or link sharing using the aggregated analysis
       if (shareMethod === "email" && recipientEmail) {
@@ -677,7 +709,7 @@ export async function registerRoutes(app: Express) {
         // Generate a unique share token
         const shareToken = randomUUID();
 
-        // Store the analysis with the token (you might want to implement this in storage.ts)
+        // Store the analysis with the token
         await storage.storeSharedAnalysis(shareToken, analysis);
 
         // Generate shareable link
