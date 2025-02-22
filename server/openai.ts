@@ -553,31 +553,109 @@ export async function adjustQuestionDifficulty(
 
 export async function analyzeStudentSkills(attempts: any[]) {
   try {
-    const prompt = `Analyze this student's exam performance data and provide a detailed assessment of their strengths and areas for improvement.
+    const prompt = `Analyze this student's exam performance data and provide a comprehensive skills assessment. 
+    Consider their progress over time and identify patterns in their learning.
 
     Exam attempts and performance data:
     ${JSON.stringify(attempts, null, 2)}
 
-    Provide a comprehensive analysis focusing on:
-    1. Core academic strengths (e.g., logical reasoning, conceptual understanding, problem-solving)
-    2. Learning style strengths (e.g., visual learning, practical application)
-    3. Subject-specific strengths
-    4. Areas needing improvement
-    5. Specific actionable recommendations
+    Analyze the following aspects in detail:
+    1. Cognitive Skills:
+       - Critical thinking and problem-solving approach
+       - Analytical abilities
+       - Conceptual understanding depth
+       - Pattern recognition capabilities
+       - Memory and retention
+
+    2. Subject-Specific Skills:
+       - Core concepts mastery
+       - Application of theories
+       - Mathematical/scientific reasoning
+       - Writing and expression abilities
+
+    3. Learning Style:
+       - Preferred learning methods
+       - Information processing patterns
+       - Time management and exam strategy
+       - Response patterns under pressure
+
+    4. Progress Tracking:
+       - Improvement trends
+       - Consistent strengths
+       - Areas showing growth
+       - Persistent challenges
+
+    5. Detailed Recommendations:
+       - Specific study techniques
+       - Resource recommendations
+       - Practice strategies
+       - Time management tips
 
     Respond in this exact JSON format:
     {
-      "strengths": [
-        "detailed strength description 1",
-        "detailed strength description 2"
-      ],
-      "areasForImprovement": [
-        "detailed area for improvement 1",
-        "detailed area for improvement 2"
-      ],
-      "recommendations": [
-        "specific actionable recommendation 1",
-        "specific actionable recommendation 2"
+      "cognitiveSkills": {
+        "strengths": [
+          {
+            "skill": "string",
+            "evidence": "string",
+            "impactLevel": "High|Medium|Low"
+          }
+        ],
+        "areasForImprovement": [
+          {
+            "skill": "string",
+            "currentLevel": "string",
+            "suggestedApproach": "string"
+          }
+        ]
+      },
+      "subjectSkills": {
+        "masteredConcepts": [
+          {
+            "concept": "string",
+            "proficiencyLevel": "Expert|Proficient|Developing",
+            "evidence": "string"
+          }
+        ],
+        "challengingAreas": [
+          {
+            "concept": "string",
+            "gap": "string",
+            "recommendedResources": ["string"]
+          }
+        ]
+      },
+      "learningStyle": {
+        "primaryStyle": "string",
+        "effectiveStrategies": ["string"],
+        "adaptationNeeds": ["string"]
+      },
+      "progressAnalysis": {
+        "improvements": [
+          {
+            "area": "string",
+            "fromLevel": "string",
+            "toLevel": "string",
+            "timeframe": "string"
+          }
+        ],
+        "consistentStrengths": ["string"],
+        "growthAreas": ["string"]
+      },
+      "personalizedRecommendations": [
+        {
+          "focus": "string",
+          "actionItems": ["string"],
+          "resources": [
+            {
+              "type": "Video|Article|Practice|Tool",
+              "title": "string",
+              "description": "string",
+              "link": "string"
+            }
+          ],
+          "expectedOutcome": "string"
+        }
       ]
     }`;
 
@@ -586,7 +664,7 @@ export async function analyzeStudentSkills(attempts: any[]) {
       messages: [
         {
           role: "system",
-          content: "You are an expert educational analyst specializing in identifying student strengths and learning needs. Provide specific, actionable insights."
+          content: "You are an expert educational analyst specializing in identifying student strengths, learning styles, and providing detailed, actionable insights. Your analysis should be specific, evidence-based, and focused on practical improvements."
         },
         {
           role: "user",
