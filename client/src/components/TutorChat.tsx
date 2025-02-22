@@ -76,9 +76,10 @@ export function TutorChat({ subject, grade }: { subject?: string; grade?: string
           <div className="space-y-4 py-4">
             {messages.length === 0 && (
               <div className="text-center text-muted-foreground py-8">
+                Welcome to ExamGuru! I'm your AI assistant, ready to help with:
                 {subject && grade 
-                  ? `Ask me anything about ${subject}! I'm here to help you learn and understand better.`
-                  : "Hi! I'm your ExamGuru AI Assistant. How can I help you today?"}
+                  ? `\n- Questions about ${subject}\n- Study guidance for Grade ${grade}\n- Exam preparation tips`
+                  : "\n- Creating and managing exams\n- Study guidance\n- Performance analysis\n- Learning recommendations"}
               </div>
             )}
             {messages.map((message, i) => (
@@ -88,38 +89,31 @@ export function TutorChat({ subject, grade }: { subject?: string; grade?: string
                   message.role === "user" ? "justify-end" : "justify-start"
                 }`}
               >
+                {message.role === "assistant" && (
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center bg-secondary/50 shrink-0">
+                    <MessageSquare className="w-4 h-4" />
+                  </div>
+                )}
                 <div
-                  className={`flex gap-3 max-w-[80%] ${
-                    message.role === "user" ? "flex-row-reverse" : "flex-row"
-                  }`}
+                  className={`flex-shrink max-w-[80%] break-words ${
+                    message.role === "user"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-secondary/50"
+                  } rounded-2xl px-4 py-2`}
                 >
-                  <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-                      message.role === "user" ? "bg-primary" : "bg-secondary"
-                    }`}
-                  >
-                    {message.role === "user" ? (
-                      <User className="w-4 h-4 text-primary-foreground" />
-                    ) : (
-                      <MessageSquare className="w-4 h-4" />
-                    )}
-                  </div>
-                  <div
-                    className={`rounded-lg p-3 ${
-                      message.role === "user"
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-secondary/50"
-                    }`}
-                  >
-                    {message.content}
-                  </div>
+                  {message.content}
                 </div>
+                {message.role === "user" && (
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center bg-primary shrink-0">
+                    <User className="w-4 h-4 text-primary-foreground" />
+                  </div>
+                )}
               </div>
             ))}
             {chatMutation.isPending && (
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span>AI tutor is thinking...</span>
+                <span>AI assistant is thinking...</span>
               </div>
             )}
           </div>
