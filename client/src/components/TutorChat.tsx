@@ -47,11 +47,14 @@ export function TutorChat({ subject, grade }: { subject: string; grade: string }
 
   return (
     <Card className="h-[600px] flex flex-col">
-      <CardHeader>
-        <CardTitle>AI Tutor Chat - {subject} Grade {grade}</CardTitle>
+      <CardHeader className="border-b">
+        <CardTitle className="flex items-center gap-2">
+          <MessageSquare className="h-5 w-5" />
+          {subject} - Grade {grade}
+        </CardTitle>
       </CardHeader>
-      <CardContent className="flex-1 flex flex-col gap-4">
-        <ScrollArea className="flex-1 pr-4">
+      <CardContent className="flex-1 flex flex-col gap-4 p-4">
+        <ScrollArea className="flex-1 pr-4 -mr-4">
           <div className="space-y-4">
             {messages.map((message, i) => (
               <div
@@ -66,7 +69,7 @@ export function TutorChat({ subject, grade }: { subject: string; grade: string }
                   }`}
                 >
                   <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                    className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
                       message.role === "user" ? "bg-primary" : "bg-secondary"
                     }`}
                   >
@@ -80,7 +83,7 @@ export function TutorChat({ subject, grade }: { subject: string; grade: string }
                     className={`rounded-lg p-3 ${
                       message.role === "user"
                         ? "bg-primary text-primary-foreground"
-                        : "bg-muted"
+                        : "bg-secondary/50"
                     }`}
                   >
                     {message.content}
@@ -96,12 +99,13 @@ export function TutorChat({ subject, grade }: { subject: string; grade: string }
             )}
           </div>
         </ScrollArea>
-        <form onSubmit={handleSubmit} className="flex gap-2">
+        <form onSubmit={handleSubmit} className="flex gap-2 pt-2 border-t">
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask your question..."
             disabled={chatMutation.isPending}
+            className="flex-1"
           />
           <Button type="submit" disabled={chatMutation.isPending}>
             Send

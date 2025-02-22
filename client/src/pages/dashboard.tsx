@@ -535,36 +535,54 @@ export default function Dashboard() {
         </TabsContent>
 
         <TabsContent value="tutor">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-4">
-              <h2 className="text-xl font-semibold">AI Tutor Assistant</h2>
-              <p className="text-muted-foreground">
-                Get personalized help with your studies. Ask questions about any topic
-                and receive detailed explanations tailored to your grade level.
-              </p>
-              {attempts && attempts[0] && (
-                <TutorChat
-                  subject={attempts[0].exam.subject}
-                  grade={attempts[0].exam.grade}
-                />
-              )}
+            <div className="grid gap-8 md:grid-cols-2">
+              <div className="space-y-4">
+                <h2 className="text-xl font-semibold">AI Tutor Assistant</h2>
+                <p className="text-muted-foreground">
+                  Get personalized help with your studies. Ask questions about any topic
+                  and receive detailed explanations tailored to your grade level.
+                </p>
+                {attempts && attempts[0] && (
+                  <TutorChat
+                    subject={attempts[0].exam.subject}
+                    grade={attempts[0].exam.grade}
+                  />
+                )}
+              </div>
+
+              <div className="space-y-4">
+                <Card className="h-fit">
+                  <CardHeader>
+                    <CardTitle>How to Use the AI Tutor</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-3">
+                      <li className="flex items-center gap-2">
+                        <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                        Ask specific questions about topics you're studying
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                        Request step-by-step explanations of concepts
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                        Get help understanding exam questions
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                        Practice problem-solving with guidance
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                        Receive personalized learning recommendations
+                      </li>
+                    </ul>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
-            <Card>
-              <CardHeader>
-                <CardTitle>How to Use the AI Tutor</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2">
-                  <li>• Ask specific questions about topics you're studying</li>
-                  <li>• Request step-by-step explanations of concepts</li>
-                  <li>• Get help understanding exam questions</li>
-                  <li>• Practice problem-solving with guidance</li>
-                  <li>• Receive personalized learning recommendations</li>
-                </ul>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
+          </TabsContent>
       </Tabs>
     </div>
   );
