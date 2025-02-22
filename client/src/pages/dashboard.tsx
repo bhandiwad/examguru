@@ -140,6 +140,7 @@ export default function Dashboard() {
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [modifyingExamId, setModifyingExamId] = useState<number | null>(null);
 
   const { data: attempts, isLoading: attemptsLoading } = useQuery<AttemptWithExam[]>({
     queryKey: ["/api/attempts"],
@@ -164,11 +165,19 @@ export default function Dashboard() {
     onError: (error) => {
       console.error("Error adjusting difficulty:", error);
       alert("Error adjusting difficulty. Please try again later.");
-    }
+    },
   });
 
   const handleDifficultyChange = (examId: number, newDifficulty: DifficultyLevel) => {
-    adjustDifficultyMutation.mutate({ examId, newDifficulty });
+    setModifyingExamId(examId);
+    adjustDifficultyMutation.mutate(
+      { examId, newDifficulty },
+      {
+        onSettled: () => {
+          setModifyingExamId(null);
+        },
+      }
+    );
   };
 
   const isLoading = attemptsLoading || examsLoading;
@@ -379,9 +388,9 @@ export default function Dashboard() {
                               variant="outline"
                               size="sm"
                               className="ml-2"
-                              disabled={adjustDifficultyMutation.isPending}
+                              disabled={modifyingExamId === exam.id}
                             >
-                              {adjustDifficultyMutation.isPending ? (
+                              {modifyingExamId === exam.id ? (
                                 <>
                                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                                   Adjusting...
@@ -398,8 +407,10 @@ export default function Dashboard() {
                             {["Easy", "Medium", "Hard"].map((level) => (
                               <DropdownMenuItem
                                 key={level}
-                                onClick={() => handleDifficultyChange(exam.id, level as DifficultyLevel)}
-                                disabled={level === exam.difficulty || adjustDifficultyMutation.isPending}
+                                onClick={() =>
+                                  handleDifficultyChange(exam.id, level as DifficultyLevel)
+                                }
+                                disabled={level === exam.difficulty || modifyingExamId === exam.id}
                               >
                                 {level}
                               </DropdownMenuItem>
