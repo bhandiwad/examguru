@@ -26,7 +26,16 @@ const CURRICULA = [
   "BITSAT"
 ];
 
-const DIFFICULTIES = ["Easy", "Medium", "Hard"];
+const DIFFICULTIES = [
+  "Beginner",
+  "Foundation",
+  "Easy",
+  "Medium",
+  "Advanced",
+  "Hard",
+  "Expert",
+  "Olympiad"
+];
 const GRADES = ["8", "9", "10", "11", "12", "Competitive"];
 
 // Subject combinations for different curricula
