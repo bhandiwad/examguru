@@ -465,11 +465,41 @@ export async function registerRoutes(app: Express) {
         });
       }
 
+      // Get student's performance data
+      const userId = 1; // TODO: Get from authenticated session
+      const attempts = await storage.getAttempts(userId);
+
+      // Analyze performance data
+      const performanceContext = attempts
+        .filter(attempt => attempt.exam.subject === subject)
+        .map(attempt => ({
+          score: attempt.score,
+          feedback: attempt.feedback,
+          date: attempt.endTime
+        }));
+
+      // Add performance context to the chat history
+      const chatHistory = history || [];
+      if (performanceContext.length > 0) {
+        chatHistory.unshift({
+          role: "system",
+          content: `Student's performance in ${subject}: ${
+            performanceContext.length
+          } attempts, average score: ${
+            performanceContext.reduce((sum, p) => sum + p.score, 0) / performanceContext.length
+          }%. Recent strengths: ${
+            performanceContext[0]?.feedback?.overall?.strengths?.join(", ") || "No data"
+          }. Areas for improvement: ${
+            performanceContext[0]?.feedback?.overall?.areas_for_improvement?.join(", ") || "No data"
+          }`
+        });
+      }
+
       const response = await generateTutorResponse(
         message,
         subject,
         grade,
-        history || []
+        chatHistory
       );
 
       res.json(response);

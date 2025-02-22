@@ -478,13 +478,25 @@ export async function generateTutorResponse(
     6. Maintain a supportive and encouraging tone
     7. Provide step-by-step explanations when solving problems
     8. Reference relevant curriculum concepts and learning objectives
+    9. Suggest specific practice exercises when appropriate
+    10. Include links to relevant Khan Academy or similar educational resources
+
+    Format your responses to include:
+    1. Direct answer to the student's question
+    2. Step-by-step explanation if it's a problem
+    3. Real-world examples or analogies
+    4. Practice suggestions
+    5. Links to additional resources
 
     Remember:
     - Keep explanations concise but thorough
     - Use encouraging language
     - If a student is struggling, break down the concept into smaller parts
     - Suggest additional resources when appropriate
-    - If a student asks for direct homework answers, guide them through the problem-solving process instead`;
+    - If a student asks for direct homework answers, guide them through the problem-solving process instead
+    - Use grade-appropriate language and examples
+    - Relate concepts to everyday experiences
+    - Encourage students to think through problems themselves`;
 
     const response = await openai.chat.completions.create({
       model: "gpt-4",
@@ -511,7 +523,6 @@ export async function generateTutorResponse(
   }
 }
 
-// Add new difficulty adjustment function
 export async function adjustQuestionDifficulty(
   questions: any[],
   newDifficulty: string,
