@@ -190,3 +190,6 @@ export type Achievement = typeof achievements.$inferSelect;
 export type UserAchievement = typeof userAchievements.$inferSelect;
 export type InsertAchievement = z.infer<typeof achievementSchema>;
 export type InsertUserAchievement = z.infer<typeof userAchievementSchema>;
+
+// Add after the export type declarations at the end of the file
+export type AttemptWithExam = Attempt & { exam: Exam };

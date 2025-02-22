@@ -49,6 +49,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { StrengthsWeaknessAnalysis } from "@/components/StrengthsWeaknessAnalysis";
 
 type AttemptWithExam = Attempt & { exam: Exam };
 type DifficultyLevel = "Easy" | "Medium" | "Hard";
@@ -238,6 +239,10 @@ export default function Dashboard() {
                   Performance Analytics
                 </h2>
                 <PerformanceTrends attempts={attempts} />
+              </div>
+
+              <div className="mb-8">
+                <StrengthsWeaknessAnalysis attempts={attempts} />
               </div>
 
               <div className="mb-8">

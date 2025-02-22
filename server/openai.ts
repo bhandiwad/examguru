@@ -550,3 +550,60 @@ export async function adjustQuestionDifficulty(
     throw new Error(`Failed to adjust question difficulty: ${error.message}`);
   }
 }
+
+export async function analyzeStudentSkills(attempts: any[]) {
+  try {
+    const prompt = `Analyze this student's exam performance data and provide a detailed assessment of their strengths and areas for improvement.
+
+    Exam attempts and performance data:
+    ${JSON.stringify(attempts, null, 2)}
+
+    Provide a comprehensive analysis focusing on:
+    1. Core academic strengths (e.g., logical reasoning, conceptual understanding, problem-solving)
+    2. Learning style strengths (e.g., visual learning, practical application)
+    3. Subject-specific strengths
+    4. Areas needing improvement
+    5. Specific actionable recommendations
+
+    Respond in this exact JSON format:
+    {
+      "strengths": [
+        "detailed strength description 1",
+        "detailed strength description 2"
+      ],
+      "areasForImprovement": [
+        "detailed area for improvement 1",
+        "detailed area for improvement 2"
+      ],
+      "recommendations": [
+        "specific actionable recommendation 1",
+        "specific actionable recommendation 2"
+      ]
+    }`;
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-4",
+      messages: [
+        {
+          role: "system",
+          content: "You are an expert educational analyst specializing in identifying student strengths and learning needs. Provide specific, actionable insights."
+        },
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      temperature: 0.7,
+      response_format: { type: "json_object" }
+    });
+
+    if (!response.choices[0].message.content) {
+      throw new Error("No content received from OpenAI");
+    }
+
+    return JSON.parse(response.choices[0].message.content);
+  } catch (error: any) {
+    console.error("Error analyzing student skills:", error);
+    throw new Error(`Failed to analyze student skills: ${error.message}`);
+  }
+}

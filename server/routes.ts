@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer } from "http";
 import multer from "multer";
 import { storage } from "./storage";
-import { generateQuestions, evaluateAnswers, analyzeQuestionPaperTemplate, generateTutorResponse, adjustQuestionDifficulty } from "./openai";
+import { generateQuestions, evaluateAnswers, analyzeQuestionPaperTemplate, generateTutorResponse, adjustQuestionDifficulty, analyzeStudentSkills } from "./openai";
 import { insertExamSchema, insertAttemptSchema, insertQuestionTemplateSchema } from "@shared/schema";
 
 // Configure multer for handling file uploads
@@ -477,6 +477,40 @@ export async function registerRoutes(app: Express) {
       console.error("Error adjusting exam difficulty:", error);
       res.status(500).json({
         message: "Failed to adjust exam difficulty",
+        error: error.message
+      });
+    }
+  });
+
+  app.get("/api/analysis/student-skills", async (req, res) => {
+    try {
+      // Get attempt IDs from query params
+      const attemptIds = req.query.attemptIds
+        ? (req.query.attemptIds as string).split(',').map(id => parseInt(id))
+        : [];
+
+      if (!attemptIds.length) {
+        return res.status(400).json({ message: "No attempt IDs provided" });
+      }
+
+      // Get attempts with exam data
+      const attempts = await Promise.all(
+        attemptIds.map(id => storage.getAttemptWithExam(id))
+      );
+
+      // Filter out any null results
+      const validAttempts = attempts.filter(a => a !== null);
+
+      if (!validAttempts.length) {
+        return res.status(404).json({ message: "No valid attempts found" });
+      }
+
+      const analysis = await analyzeStudentSkills(validAttempts);
+      res.json(analysis);
+    } catch (error: any) {
+      console.error("Error analyzing student skills:", error);
+      res.status(500).json({
+        message: "Failed to analyze student skills",
         error: error.message
       });
     }
