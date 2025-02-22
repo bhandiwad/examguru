@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer } from "http";
 import multer from "multer";
 import { storage } from "./storage";
-import { generateQuestions, evaluateAnswers, analyzeQuestionPaperTemplate } from "./openai";
+import { generateQuestions, evaluateAnswers, analyzeQuestionPaperTemplate, generateTutorResponse } from "./openai";
 import { insertExamSchema, insertAttemptSchema, insertQuestionTemplateSchema } from "@shared/schema";
 
 // Configure multer for handling file uploads
@@ -404,6 +404,33 @@ export async function registerRoutes(app: Express) {
       console.error("Error seeding achievements:", error);
       res.status(500).json({
         message: "Failed to seed achievements",
+        error: error.message
+      });
+    }
+  });
+
+  app.post("/api/chat", async (req, res) => {
+    try {
+      const { message, subject, grade, history } = req.body;
+
+      if (!message || !subject || !grade) {
+        return res.status(400).json({
+          message: "Missing required fields"
+        });
+      }
+
+      const response = await generateTutorResponse(
+        message,
+        subject,
+        grade,
+        history || []
+      );
+
+      res.json(response);
+    } catch (error: any) {
+      console.error("Error in chat endpoint:", error);
+      res.status(500).json({
+        message: "Failed to generate response",
         error: error.message
       });
     }

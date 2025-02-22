@@ -421,3 +421,53 @@ export async function analyzeQuestionPaperTemplate(imageBase64: string) {
     throw new Error(`Failed to analyze question paper: ${error.message}`);
   }
 }
+
+export async function generateTutorResponse(
+  message: string,
+  subject: string,
+  grade: string,
+  history: { role: string; content: string }[]
+) {
+  try {
+    const systemPrompt = `You are an expert tutor specializing in ${subject} for Grade ${grade} students.
+    Your role is to:
+    1. Provide clear, age-appropriate explanations
+    2. Break down complex concepts into simpler terms
+    3. Use examples and analogies relevant to the student's grade level
+    4. Guide students to understand concepts rather than just giving answers
+    5. Encourage critical thinking and problem-solving
+    6. Maintain a supportive and encouraging tone
+    7. Provide step-by-step explanations when solving problems
+    8. Reference relevant curriculum concepts and learning objectives
+
+    Remember:
+    - Keep explanations concise but thorough
+    - Use encouraging language
+    - If a student is struggling, break down the concept into smaller parts
+    - Suggest additional resources when appropriate
+    - If a student asks for direct homework answers, guide them through the problem-solving process instead`;
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-4",
+      messages: [
+        { role: "system", content: systemPrompt },
+        ...history,
+        { role: "user", content: message }
+      ],
+      temperature: 0.7,
+      max_tokens: 1000
+    });
+
+    if (!response.choices[0].message.content) {
+      throw new Error("No response generated");
+    }
+
+    return {
+      role: "assistant",
+      content: response.choices[0].message.content
+    };
+  } catch (error: any) {
+    console.error("Error generating tutor response:", error);
+    throw new Error(`Failed to generate tutor response: ${error.message}`);
+  }
+}
