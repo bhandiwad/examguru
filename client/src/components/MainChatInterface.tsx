@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -26,7 +25,7 @@ export function MainChatInterface() {
       - Generating exams from templates
       - Viewing performance analytics
       - Getting personalized learning assistance
-      
+
       What would you like to do?`,
     },
   ]);
@@ -76,10 +75,10 @@ export function MainChatInterface() {
 
     // Split content by code blocks and other formatting
     const parts = content.split(/(```[\s\S]*?```)|(\n- .*)/g);
-    
+
     return parts.map((part, index) => {
       if (!part) return null;
-      
+
       if (part.startsWith("```") && part.endsWith("```")) {
         const code = part.slice(3, -3).replace(/^[a-z]+\n/, '');
         return (
@@ -88,7 +87,7 @@ export function MainChatInterface() {
           </pre>
         );
       }
-      
+
       if (part.startsWith("\n- ")) {
         return (
           <li key={index} className="ml-4">
@@ -96,7 +95,7 @@ export function MainChatInterface() {
           </li>
         );
       }
-      
+
       return <span key={index}>{part}</span>;
     });
   };
@@ -125,50 +124,42 @@ export function MainChatInterface() {
                   message.role === "user" ? "justify-end" : "justify-start"
                 }`}
               >
+                {message.role === "assistant" && (
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center bg-secondary/50 shrink-0">
+                    <Bot className="w-4 h-4" />
+                  </div>
+                )}
                 <div
-                  className={`flex gap-3 max-w-[80%] ${
-                    message.role === "user" ? "flex-row-reverse" : "flex-row"
-                  }`}
+                  className={`flex-shrink max-w-[80%] break-words ${
+                    message.role === "user"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-secondary/50"
+                  } rounded-2xl px-4 py-2`}
                 >
-                  <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-                      message.role === "user" ? "bg-primary" : "bg-secondary"
-                    }`}
-                  >
-                    {message.role === "user" ? (
-                      <User className="w-4 h-4 text-primary-foreground" />
-                    ) : (
-                      <Bot className="w-4 h-4" />
-                    )}
-                  </div>
-                  <div
-                    className={`rounded-lg p-3 ${
-                      message.role === "user"
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-secondary/50"
-                    }`}
-                  >
-                    {formatMessage(message)}
-
-                    {message.action && message.role === "assistant" && (
-                      <div className="mt-2 pt-2 border-t border-border/50">
-                        <Button 
-                          variant="secondary" 
-                          size="sm"
-                          onClick={() => {
-                            // Handle action click based on type
-                            console.log("Action clicked:", message.action);
-                          }}
-                        >
-                          {message.action.type === "create_template" && "Create Template"}
-                          {message.action.type === "create_exam" && "Generate Exam"}
-                          {message.action.type === "view_performance" && "View Performance"}
-                          {message.action.type === "help" && "Show Help"}
-                        </Button>
-                      </div>
-                    )}
-                  </div>
+                  {formatMessage(message)}
+                  {message.action && message.role === "assistant" && (
+                    <div className="mt-2 pt-2 border-t border-border/50">
+                      <Button 
+                        variant="secondary" 
+                        size="sm"
+                        onClick={() => {
+                          // Handle action click based on type
+                          console.log("Action clicked:", message.action);
+                        }}
+                      >
+                        {message.action.type === "create_template" && "Create Template"}
+                        {message.action.type === "create_exam" && "Generate Exam"}
+                        {message.action.type === "view_performance" && "View Performance"}
+                        {message.action.type === "help" && "Show Help"}
+                      </Button>
+                    </div>
+                  )}
                 </div>
+                {message.role === "user" && (
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center bg-primary shrink-0">
+                    <User className="w-4 h-4 text-primary-foreground" />
+                  </div>
+                )}
               </div>
             ))}
             {chatMutation.isPending && (
@@ -179,7 +170,7 @@ export function MainChatInterface() {
             )}
           </div>
         </ScrollArea>
-        <form onSubmit={handleSubmit} className="p-4 mt-auto border-t">
+        <form onSubmit={handleSubmit} className="p-4 border-t">
           <div className="flex gap-2">
             <Input
               value={input}

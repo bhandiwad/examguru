@@ -14,10 +14,11 @@ export async function parseCommand(message: string): Promise<ParsedCommand> {
   if (lowercaseMessage.includes("create template") || 
       lowercaseMessage.includes("new template") ||
       lowercaseMessage.includes("make template")) {
+    const extractedInfo = extractTemplateInfo(message);
     return {
       type: "create_template",
       data: {
-        extractedInfo: extractTemplateInfo(message)
+        extractedInfo
       }
     };
   }
@@ -26,10 +27,11 @@ export async function parseCommand(message: string): Promise<ParsedCommand> {
   if (lowercaseMessage.includes("create exam") || 
       lowercaseMessage.includes("generate exam") ||
       lowercaseMessage.includes("new exam")) {
+    const extractedInfo = extractExamInfo(message);
     return {
       type: "create_exam",
       data: {
-        extractedInfo: extractExamInfo(message)
+        extractedInfo
       }
     };
   }
@@ -40,10 +42,11 @@ export async function parseCommand(message: string): Promise<ParsedCommand> {
       lowercaseMessage.includes("check score") ||
       lowercaseMessage.includes("how did") ||
       lowercaseMessage.includes("performance")) {
+    const extractedInfo = extractPerformanceInfo(message);
     return {
       type: "view_performance",
       data: {
-        extractedInfo: extractPerformanceInfo(message)
+        extractedInfo
       }
     };
   }
@@ -62,57 +65,48 @@ export async function parseCommand(message: string): Promise<ParsedCommand> {
 
 function extractTemplateInfo(message: string) {
   // Extract subject, grade, curriculum info from message
-  const extractedInfo = {
+  return {
     subject: SUBJECTS.find(subject => 
       message.toLowerCase().includes(subject.toLowerCase())
-    ),
+    ) || undefined,
     grade: GRADES.find(grade => 
       message.includes(grade)
-    ),
+    ) || undefined,
     curriculum: CURRICULA.find(curriculum =>
       message.toLowerCase().includes(curriculum.toLowerCase())
-    ),
+    ) || undefined,
     difficulty: DIFFICULTIES.find(difficulty =>
       message.toLowerCase().includes(difficulty.toLowerCase())
-    )
+    ) || undefined
   };
-
-  return extractedInfo;
 }
 
 function extractExamInfo(message: string) {
-  // Extract exam-specific details
-  const extractedInfo = {
+  return {
     subject: SUBJECTS.find(subject => 
       message.toLowerCase().includes(subject.toLowerCase())
-    ),
+    ) || undefined,
     grade: GRADES.find(grade => 
       message.includes(grade)
-    ),
+    ) || undefined,
     curriculum: CURRICULA.find(curriculum =>
       message.toLowerCase().includes(curriculum.toLowerCase())
-    ),
+    ) || undefined,
     difficulty: DIFFICULTIES.find(difficulty =>
       message.toLowerCase().includes(difficulty.toLowerCase())
-    ),
-    // Add more exam-specific extraction
+    ) || undefined,
     numQuestions: extractNumberFromText(message, ["questions", "marks"])
   };
-
-  return extractedInfo;
 }
 
 function extractPerformanceInfo(message: string) {
-  // Extract user, subject, date range info for performance queries
-  const extractedInfo = {
+  return {
     subject: SUBJECTS.find(subject => 
       message.toLowerCase().includes(subject.toLowerCase())
-    ),
+    ) || undefined,
     timeframe: extractTimeframe(message),
     examType: extractExamType(message)
   };
-
-  return extractedInfo;
 }
 
 function extractNumberFromText(text: string, keywords: string[]): number | undefined {
