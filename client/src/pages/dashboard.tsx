@@ -38,6 +38,7 @@ import {
   FileText as FileTextIcon,
   Star as StarIcon,
 } from "lucide-react";
+import { LearningRecommendations } from "@/components/LearningRecommendations";
 
 type AttemptWithExam = Attempt & { exam: Exam };
 
@@ -164,10 +165,16 @@ export default function Dashboard() {
       </div>
 
       {attempts && attempts.length > 0 && (
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold mb-4">Performance Analytics</h2>
-          <PerformanceTrends attempts={attempts} />
-        </div>
+        <>
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold mb-4">Performance Analytics</h2>
+            <PerformanceTrends attempts={attempts} />
+          </div>
+
+          <div className="mb-8">
+            <LearningRecommendations attempts={attempts} />
+          </div>
+        </>
       )}
 
       <div className="mb-8">

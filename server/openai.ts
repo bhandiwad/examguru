@@ -215,77 +215,110 @@ export async function generateQuestions(
 export async function evaluateAnswers(imageBase64: string, questions: any) {
   try {
     const evaluationPrompt = `
-    You are evaluating a mathematics exam. Here are the questions and student's answers:
+You are evaluating a mathematics exam. Here are the questions and student's answers:
 
-    Questions with correct answers and rubrics: ${JSON.stringify(questions, null, 2)}
-    Student's answer image is provided.
+Questions with correct answers and rubrics: ${JSON.stringify(questions, null, 2)}
+Student's answer image is provided.
 
-    Evaluation Rules:
-    1. For MCQ questions:
-       - Compare student's selected option with the correct answer
-       - Award full marks for correct answers
-       - Zero marks for incorrect answers
+Evaluation Rules:
+1. For MCQ questions:
+   - Compare student's selected option with the correct answer
+   - Award full marks for correct answers
+   - Zero marks for incorrect answers
 
-    2. For theory/numerical questions:
-       - Check solution steps visible in the answer image
-       - Follow the provided rubric strictly
-       - Award partial marks based on correct steps
-       - Look for mathematical reasoning and proof
+2. For theory/numerical questions:
+   - Check solution steps visible in the answer image
+   - Follow the provided rubric strictly
+   - Award partial marks based on correct steps
+   - Look for mathematical reasoning and proof
 
-    3. For each question provide:
-       - Detailed scoring breakdown
-       - Specific feedback on mistakes
-       - Conceptual understanding assessment
-       - Improvement suggestions
+3. For each question provide:
+   - Detailed scoring breakdown
+   - Specific feedback on mistakes
+   - Conceptual understanding assessment
+   - Improvement suggestions
+   - Topic-specific study resources including:
+     * Video tutorials from Khan Academy or similar platforms
+     * Interactive practice problems
+     * Relevant textbook sections or articles
+     * Online simulations or tools when applicable
 
-    Your evaluation must be detailed and provided in this EXACT JSON format:
-    {
-      "score": number (0-100),
-      "feedback": {
-        "overall": {
-          "summary": "Brief overall assessment",
-          "strengths": ["strength1", "strength2"],
-          "areas_for_improvement": ["area1", "area2"],
-          "learning_recommendations": ["recommendation1", "recommendation2"]
-        },
-        "questions": [
-          {
-            "questionNumber": number,
-            "isCorrect": boolean,
-            "score": number,
-            "chapter": "string",
-            "topic": "string",
-            "conceptualUnderstanding": {
-              "level": "Excellent|Good|Fair|Needs Improvement",
-              "details": "string"
-            },
-            "misconceptions": ["string"],
-            "studyResources": [
-              {
-                "type": "video|article|practice",
-                "title": "string",
-                "description": "string",
-                "link": "string (optional)"
-              }
-            ]
-          }
-        ],
-        "performanceAnalytics": {
-          "byChapter": {
-            "chapterName": {
-              "score": number,
-              "topics": ["string"],
-              "recommendations": ["string"]
+4. Learning recommendations should:
+   - Be specific to the topics where improvement is needed
+   - Include clear action items
+   - Link to concrete learning resources
+   - Suggest practice problems
+   - Consider the student's current understanding level
+
+Your evaluation must be detailed and provided in this EXACT JSON format:
+{
+  "score": number (0-100),
+  "feedback": {
+    "overall": {
+      "summary": "Brief overall assessment",
+      "strengths": ["strength1", "strength2"],
+      "areas_for_improvement": ["area1", "area2"],
+      "learning_recommendations": [
+        {
+          "topic": "string",
+          "recommendation": "string",
+          "resources": [
+            {
+              "type": "video|article|practice",
+              "title": "string",
+              "description": "string",
+              "link": "string (optional)"
             }
-          },
-          "difficultyAnalysis": {
-            "easy": number (0-100),
-            "medium": number (0-100),
-            "hard": number (0-100)
-          }
+          ]
         }
+      ]
+    },
+    "questions": [
+      {
+        "questionNumber": number,
+        "isCorrect": boolean,
+        "score": number,
+        "chapter": "string",
+        "topic": "string",
+        "conceptualUnderstanding": {
+          "level": "Excellent|Good|Fair|Needs Improvement",
+          "details": "string"
+        },
+        "misconceptions": ["string"],
+        "studyResources": [
+          {
+            "type": "video|article|practice",
+            "title": "string",
+            "description": "string",
+            "link": "string (optional)"
+          }
+        ]
       }
-    }`;
+    ],
+    "performanceAnalytics": {
+      "byChapter": {
+        "chapterName": {
+          "score": number,
+          "topics": ["string"],
+          "recommendations": ["string"],
+          "resources": [
+            {
+              "type": "video|article|practice",
+              "title": "string",
+              "description": "string",
+              "link": "string (optional)"
+            }
+          ]
+        }
+      },
+      "difficultyAnalysis": {
+        "easy": number (0-100),
+        "medium": number (0-100),
+        "hard": number (0-100)
+      }
+    }
+  }
+}`;
 
     const evaluationResponse = await openai.chat.completions.create({
       model: "gpt-4-vision-preview",
@@ -325,7 +358,7 @@ export async function evaluateAnswers(imageBase64: string, questions: any) {
     }
   } catch (error: any) {
     console.error("Error in evaluation:", error);
-    throw error; 
+    throw error;
   }
 }
 
