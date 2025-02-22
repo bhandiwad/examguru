@@ -59,8 +59,8 @@ export class DatabaseStorage implements IStorage {
         templateSnapshot = {
           id: template.id,
           format: template.paperFormat,
-          structure: template.template.structure,
-          rubric: template.template.rubric,
+          structure: template.template?.structure,
+          rubric: template.template?.rubric,
           formatMetadata: template.formatMetadata
         };
       }
@@ -77,7 +77,7 @@ export class DatabaseStorage implements IStorage {
         format: insertExam.format,
         questions: insertExam.questions,
         templateId: insertExam.templateId,
-        templateData: templateSnapshot, // Store template snapshot
+        templateData: templateSnapshot,
         createdAt: new Date()
       })
       .returning();

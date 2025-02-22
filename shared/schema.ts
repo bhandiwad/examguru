@@ -33,6 +33,7 @@ export const exams = pgTable("exams", {
   format: jsonb("format").notNull(),
   questions: jsonb("questions").notNull(),
   templateId: integer("template_id"), 
+  templateData: jsonb("template_data"),
   createdAt: timestamp("created_at").notNull().defaultNow()
 });
 
@@ -77,7 +78,14 @@ export const insertExamSchema = z.object({
       marks: z.number()
     }))
   }),
-  templateId: z.number().optional()
+  templateId: z.number().optional(),
+  templateData: z.object({
+    id: z.number(),
+    format: z.string().optional(),
+    structure: z.string().optional(),
+    rubric: z.string().optional(),
+    formatMetadata: z.any().optional()
+  }).optional()
 });
 
 // Define the feedback structure for the advanced AI evaluation system
