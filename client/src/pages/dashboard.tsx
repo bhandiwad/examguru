@@ -148,94 +148,6 @@ export default function Dashboard() {
       <div className="flex justify-between items-center mb-8">
         <PageHeader title="Your Exams" />
         <div className="flex gap-4">
-          <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-            <SheetTrigger asChild>
-              <Button variant="outline">
-                <Filter className="mr-2 h-4 w-4" />
-                Filter Exams
-              </Button>
-            </SheetTrigger>
-            <SheetPortal>
-              <SheetContent className="w-[400px] sm:w-[540px]" side="right">
-                <SheetHeader className="mb-4">
-                  <SheetTitle>Filter Exams</SheetTitle>
-                  <SheetDescription>
-                    Filter exams by subject, grade, and difficulty level.
-                  </SheetDescription>
-                </SheetHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="space-y-2">
-                    <h4 className="text-sm font-medium">Subject</h4>
-                    <Select
-                      value={selectedSubject}
-                      onValueChange={(value) => {
-                        setSelectedSubject(value);
-                        handleFilterChange();
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select subject" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Subjects</SelectItem>
-                        {SUBJECTS.map((subject) => (
-                          <SelectItem key={subject} value={subject}>
-                            {subject}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <h4 className="text-sm font-medium">Grade</h4>
-                    <Select
-                      value={selectedGrade}
-                      onValueChange={(value) => {
-                        setSelectedGrade(value);
-                        handleFilterChange();
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select grade" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Grades</SelectItem>
-                        {GRADES.map((grade) => (
-                          <SelectItem key={grade} value={grade}>
-                            Grade {grade}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <h4 className="text-sm font-medium">Difficulty</h4>
-                    <Select
-                      value={selectedDifficulty}
-                      onValueChange={(value) => {
-                        setSelectedDifficulty(value);
-                        handleFilterChange();
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select difficulty" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Difficulties</SelectItem>
-                        {DIFFICULTIES.map((diff) => (
-                          <SelectItem key={diff} value={diff}>
-                            {diff}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </SheetContent>
-            </SheetPortal>
-          </Sheet>
           <Link href="/add-template">
             <Button variant="outline">
               <FilePlus className="mr-2 h-4 w-4" />
@@ -265,8 +177,99 @@ export default function Dashboard() {
 
       {exams && exams.length > 0 ? (
         <div className="mb-8">
-          <div className="flex justify-between items-center mb-4">
+          <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-semibold">Available Exams</h2>
+            <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+              <SheetTrigger asChild>
+                <Button variant="outline">
+                  <Filter className="mr-2 h-4 w-4" />
+                  Filter Exams
+                </Button>
+              </SheetTrigger>
+              <SheetPortal>
+                <SheetContent className="w-[400px] sm:w-[540px]" side="right">
+                  <SheetHeader className="mb-4">
+                    <SheetTitle>Filter Exams</SheetTitle>
+                    <SheetDescription>
+                      Filter exams by subject, grade, and difficulty level.
+                    </SheetDescription>
+                  </SheetHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="space-y-2">
+                      <h4 className="text-sm font-medium">Subject</h4>
+                      <Select
+                        value={selectedSubject}
+                        onValueChange={(value) => {
+                          setSelectedSubject(value);
+                          handleFilterChange();
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select subject" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Subjects</SelectItem>
+                          {SUBJECTS.map((subject) => (
+                            <SelectItem key={subject} value={subject}>
+                              {subject}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <h4 className="text-sm font-medium">Grade</h4>
+                      <Select
+                        value={selectedGrade}
+                        onValueChange={(value) => {
+                          setSelectedGrade(value);
+                          handleFilterChange();
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select grade" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Grades</SelectItem>
+                          {GRADES.map((grade) => (
+                            <SelectItem key={grade} value={grade}>
+                              Grade {grade}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <h4 className="text-sm font-medium">Difficulty</h4>
+                      <Select
+                        value={selectedDifficulty}
+                        onValueChange={(value) => {
+                          setSelectedDifficulty(value);
+                          handleFilterChange();
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select difficulty" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Difficulties</SelectItem>
+                          {DIFFICULTIES.map((diff) => (
+                            <SelectItem key={diff} value={diff}>
+                              {diff}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </SheetContent>
+              </SheetPortal>
+            </Sheet>
+          </div>
+
+          <div className="flex justify-end mb-4">
             <div className="flex gap-2">
               <Button
                 variant="outline"
