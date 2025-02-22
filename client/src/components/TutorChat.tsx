@@ -3,9 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { User, MessageSquare, Loader2 } from "lucide-react";
+import { AlertCircle, User, MessageSquare, Loader2 } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface Message {
   role: "user" | "assistant";
@@ -15,19 +16,30 @@ interface Message {
 export function TutorChat({ subject, grade }: { subject: string; grade: string }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   const chatMutation = useMutation({
     mutationFn: async (message: string) => {
-      const response = await apiRequest("POST", "/api/chat", {
-        message,
-        subject,
-        grade,
-        history: messages
-      });
-      return response.json();
+      try {
+        setError(null);
+        const response = await apiRequest("POST", "/api/chat", {
+          message,
+          subject,
+          grade,
+          history: messages
+        });
+        return response.json();
+      } catch (error: any) {
+        setError(error.message || "Failed to send message. Please try again.");
+        throw error;
+      }
     },
     onSuccess: (data) => {
       setMessages(prev => [...prev, data]);
+      setError(null);
+    },
+    onError: (error: Error) => {
+      setError(error.message || "Failed to send message. Please try again.");
     }
   });
 
@@ -45,17 +57,56 @@ export function TutorChat({ subject, grade }: { subject: string; grade: string }
     setInput("");
   };
 
+  // Format code blocks and mathematical expressions
+  const formatMessage = (content: string) => {
+    // Split content by code blocks (if any)
+    const parts = content.split(/(```[\s\S]*?```)/g);
+    return parts.map((part, index) => {
+      if (part.startsWith("```") && part.endsWith("```")) {
+        // Remove the backticks and language identifier
+        const code = part.slice(3, -3).replace(/^[a-z]+\n/, '');
+        return (
+          <pre key={index} className="bg-muted p-4 rounded-md my-2 overflow-x-auto">
+            <code>{code}</code>
+          </pre>
+        );
+      }
+      // Format inline math expressions (e.g., $x^2$)
+      return part.split(/(\$[^$]+\$)/g).map((text, mathIndex) => {
+        if (text.startsWith('$') && text.endsWith('$')) {
+          return (
+            <span key={`${index}-${mathIndex}`} className="font-mono text-primary">
+              {text.slice(1, -1)}
+            </span>
+          );
+        }
+        return <span key={`${index}-${mathIndex}`}>{text}</span>;
+      });
+    });
+  };
+
   return (
     <Card className="h-[600px] flex flex-col">
       <CardHeader className="border-b">
         <CardTitle className="flex items-center gap-2">
           <MessageSquare className="h-5 w-5" />
-          {subject} - Grade {grade}
+          AI Tutor - {subject} (Grade {grade})
         </CardTitle>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col gap-4 p-4">
+        {error && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
         <ScrollArea className="flex-1 pr-4 -mr-4">
           <div className="space-y-4">
+            {messages.length === 0 && (
+              <div className="text-center text-muted-foreground py-8">
+                Ask me anything about {subject}! I'm here to help you learn and understand better.
+              </div>
+            )}
             {messages.map((message, i) => (
               <div
                 key={i}
@@ -86,7 +137,7 @@ export function TutorChat({ subject, grade }: { subject: string; grade: string }
                         : "bg-secondary/50"
                     }`}
                   >
-                    {message.content}
+                    {formatMessage(message.content)}
                   </div>
                 </div>
               </div>
@@ -94,7 +145,7 @@ export function TutorChat({ subject, grade }: { subject: string; grade: string }
             {chatMutation.isPending && (
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span>AI is thinking...</span>
+                <span>AI tutor is thinking...</span>
               </div>
             )}
           </div>
@@ -108,7 +159,14 @@ export function TutorChat({ subject, grade }: { subject: string; grade: string }
             className="flex-1"
           />
           <Button type="submit" disabled={chatMutation.isPending}>
-            Send
+            {chatMutation.isPending ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                Sending...
+              </>
+            ) : (
+              'Send'
+            )}
           </Button>
         </form>
       </CardContent>
