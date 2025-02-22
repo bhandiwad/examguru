@@ -536,8 +536,64 @@ export async function registerRoutes(app: Express) {
         return res.status(404).json({ message: "No valid attempts found" });
       }
 
-      const analysis = await analyzeStudentSkills(validAttempts);
+      // Use the existing feedback from attempts instead of regenerating analysis
+      const analysis = {
+        cognitiveSkills: {
+          strengths: [],
+          areasForImprovement: []
+        },
+        subjectSkills: {
+          masteredConcepts: [],
+          challengingAreas: []
+        },
+        personalizedRecommendations: []
+      };
 
+      // Aggregate existing feedback from attempts
+      validAttempts.forEach(attempt => {
+        if (attempt.feedback) {
+          // Add overall feedback
+          if (attempt.feedback.overall) {
+            const { strengths, areas_for_improvement } = attempt.feedback.overall;
+            analysis.cognitiveSkills.strengths.push(
+              ...strengths.map(s => ({
+                skill: s,
+                evidence: `Demonstrated in ${attempt.exam.subject}`,
+                impactLevel: "High"
+              }))
+            );
+            analysis.cognitiveSkills.areasForImprovement.push(
+              ...areas_for_improvement.map(a => ({
+                skill: a,
+                currentLevel: "Needs Improvement",
+                suggestedApproach: `Focus on this area in ${attempt.exam.subject}`
+              }))
+            );
+          }
+
+          // Add per-question feedback
+          if (attempt.feedback.perQuestion) {
+            attempt.feedback.perQuestion.forEach(q => {
+              if (q.conceptualUnderstanding.level === "Good") {
+                analysis.subjectSkills.masteredConcepts.push({
+                  concept: q.keyConceptsCovered[0],
+                  proficiencyLevel: "Proficient",
+                  evidence: q.conceptualUnderstanding.details
+                });
+              }
+              if (q.improvementAreas?.length) {
+                analysis.subjectSkills.challengingAreas.push({
+                  concept: q.keyConceptsCovered[0],
+                  gap: q.misconceptions?.[0] || "Needs review",
+                  recommendedResources: q.improvementAreas
+                });
+              }
+            });
+          }
+        }
+      });
+
+      // Continue with email or link sharing using the aggregated analysis
       if (shareMethod === "email" && recipientEmail) {
         // Configure email transport
         const transporter = createTransport({
