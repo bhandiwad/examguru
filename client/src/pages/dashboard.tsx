@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { PlusCircle, FilePlus, Filter, ChevronDown, Loader2 } from "lucide-react";
+import { PlusCircle, FilePlus, Filter, ChevronDown, Loader2, Plus } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -210,15 +210,15 @@ export default function Dashboard() {
       <div className="flex justify-between items-center mb-8">
         <PageHeader title="Your Exams" />
         <div className="flex gap-4">
-          <Link href="/add-template">
+          <Link href="/manage-templates">
             <Button variant="outline">
               <FilePlus className="mr-2 h-4 w-4" />
-              Add Template
+              Manage Templates
             </Button>
           </Link>
           <Link href="/create">
             <Button>
-              <PlusCircle className="mr-2 h-4 w-4" />
+              <Plus className="mr-2 h-4 w-4" />
               Create New Exam
             </Button>
           </Link>
@@ -434,6 +434,12 @@ export default function Dashboard() {
                           <FileTextIcon className="h-4 w-4" />
                           <span>Difficulty: {exam.difficulty}</span>
                         </div>
+                        {exam.templateId && (
+                          <div className="flex items-center gap-2 text-sm">
+                            <FileTextIcon className="h-4 w-4" />
+                            <span>Template: {exam.paperFormat || 'Standard Format'}</span>
+                          </div>
+                        )}
                         <div className="flex items-center gap-2 text-sm">
                           <ClockIcon className="h-4 w-4" />
                           <span>Created: {formatDateTime(exam.createdAt)}</span>

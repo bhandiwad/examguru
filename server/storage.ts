@@ -51,6 +51,21 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createExam(insertExam: InsertExam & { userId: number, questions: any[], templateId: number }): Promise<Exam> {
+    // If there's a template, get its data first
+    let templateSnapshot = null;
+    if (insertExam.templateId) {
+      const template = await this.getTemplateById(insertExam.templateId);
+      if (template) {
+        templateSnapshot = {
+          id: template.id,
+          format: template.paperFormat,
+          structure: template.template.structure,
+          rubric: template.template.rubric,
+          formatMetadata: template.formatMetadata
+        };
+      }
+    }
+
     const [exam] = await db
       .insert(exams)
       .values({
@@ -62,6 +77,7 @@ export class DatabaseStorage implements IStorage {
         format: insertExam.format,
         questions: insertExam.questions,
         templateId: insertExam.templateId,
+        templateData: templateSnapshot, // Store template snapshot
         createdAt: new Date()
       })
       .returning();
