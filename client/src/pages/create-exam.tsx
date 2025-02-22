@@ -108,6 +108,247 @@ const TEXTBOOK_CHAPTERS = {
       ]
     }
   },
+  "JEE (Advanced)": {
+    "Physics": {
+      title: "JEE Advanced Physics",
+      chapters: [
+        "Classical Mechanics",
+        "Fluid Mechanics",
+        "Thermal Physics",
+        "Waves and Sound",
+        "Optics",
+        "Electrostatics",
+        "Current Electricity",
+        "Magnetism and EMI",
+        "Modern Physics",
+        "Nuclear Physics",
+        "Semiconductor Devices",
+        "Communication Systems",
+        "Experimental Physics",
+        "Units and Measurements",
+        "Error Analysis"
+      ]
+    },
+    "Chemistry": {
+      title: "JEE Advanced Chemistry",
+      chapters: [
+        "Atomic Structure and Chemical Bonding",
+        "States of Matter",
+        "Chemical Thermodynamics",
+        "Chemical and Ionic Equilibrium",
+        "Electrochemistry",
+        "Chemical Kinetics",
+        "Surface Chemistry",
+        "Coordination Chemistry",
+        "Qualitative Analysis",
+        "Organic Chemistry Mechanisms",
+        "Biomolecules",
+        "Polymers",
+        "Environmental Chemistry",
+        "General Principles and Processes of Isolation of Elements",
+        "p-Block Elements",
+        "d and f Block Elements",
+        "Analytical Chemistry"
+      ]
+    },
+    "Mathematics": {
+      title: "JEE Advanced Mathematics",
+      chapters: [
+        "Complex Numbers and Quadratic Equations",
+        "Matrices and Determinants",
+        "Sets, Relations and Functions",
+        "Mathematical Induction",
+        "Permutations and Combinations",
+        "Binomial Theorem",
+        "Sequences and Series",
+        "Differential Calculus",
+        "Integral Calculus",
+        "Differential Equations",
+        "Vector Algebra",
+        "3D Geometry",
+        "Probability",
+        "Mathematical Logic",
+        "Linear Programming",
+        "Conic Sections",
+        "Advanced Trigonometry"
+      ]
+    }
+  },
+  "NEET": {
+    "Biology": {
+      title: "NEET Biology",
+      chapters: [
+        "Diversity in Living World",
+        "Structural Organization in Plants and Animals",
+        "Cell Structure and Function",
+        "Plant Physiology",
+        "Human Physiology",
+        "Reproduction",
+        "Genetics and Evolution",
+        "Biology and Human Welfare",
+        "Biotechnology and Its Applications",
+        "Ecology and Environment",
+        "Animal Kingdom",
+        "Plant Kingdom",
+        "Biomolecules",
+        "Cell Division",
+        "Transport in Plants",
+        "Mineral Nutrition",
+        "Photosynthesis",
+        "Respiration",
+        "Plant Growth and Development",
+        "Human Physiology",
+        "Neural Control and Coordination",
+        "Chemical Coordination and Integration"
+      ]
+    },
+    "Physics": {
+      title: "NEET Physics",
+      chapters: [
+        "Physical World and Measurement",
+        "Kinematics",
+        "Laws of Motion",
+        "Work, Energy and Power",
+        "Motion of System of Particles and Rigid Body",
+        "Gravitation",
+        "Properties of Bulk Matter",
+        "Thermodynamics",
+        "Behaviour of Perfect Gas and Kinetic Theory",
+        "Oscillations and Waves",
+        "Electrostatics",
+        "Current Electricity",
+        "Magnetic Effects of Current and Magnetism",
+        "Electromagnetic Induction and Alternating Currents",
+        "Electromagnetic Waves",
+        "Optics",
+        "Dual Nature of Matter and Radiation",
+        "Atoms and Nuclei",
+        "Electronic Devices"
+      ]
+    },
+    "Chemistry": {
+      title: "NEET Chemistry",
+      chapters: [
+        "Some Basic Concepts of Chemistry",
+        "Structure of Atom",
+        "Classification of Elements and Periodicity",
+        "Chemical Bonding and Molecular Structure",
+        "States of Matter",
+        "Thermodynamics",
+        "Equilibrium",
+        "Redox Reactions",
+        "Hydrogen",
+        "s-Block Elements",
+        "p-Block Elements",
+        "Organic Chemistry – Some Basic Principles",
+        "Hydrocarbons",
+        "Environmental Chemistry",
+        "Solutions",
+        "Electrochemistry",
+        "Chemical Kinetics",
+        "Surface Chemistry",
+        "General Principles of Isolation of Elements",
+        "d and f Block Elements",
+        "Coordination Compounds",
+        "Haloalkanes and Haloarenes",
+        "Alcohols, Phenols and Ethers",
+        "Aldehydes, Ketones and Carboxylic Acids",
+        "Organic Compounds Containing Nitrogen",
+        "Biomolecules",
+        "Polymers",
+        "Chemistry in Everyday Life"
+      ]
+    }
+  },
+  "BITSAT": {
+    "English": {
+      title: "BITSAT English Proficiency",
+      chapters: [
+        "Reading Comprehension",
+        "Verbal Ability",
+        "English Language",
+        "Vocabulary",
+        "Grammar Usage",
+        "Sentence Completion",
+        "Critical Reasoning"
+      ]
+    },
+    "Logical Reasoning": {
+      title: "BITSAT Logical Reasoning",
+      chapters: [
+        "Logical Deduction",
+        "Verbal Reasoning",
+        "Non-verbal Reasoning",
+        "Data Interpretation",
+        "Pattern Recognition",
+        "Analytical Reasoning",
+        "Critical Thinking"
+      ]
+    },
+    "Physics": {
+      title: "BITSAT Physics",
+      chapters: [
+         "Kinematics",
+        "Laws of Motion",
+        "Work, Energy and Power",
+        "Rotational Motion",
+        "Gravitation",
+        "Properties of Matter",
+        "Thermodynamics",
+        "Kinetic Theory of Gases",
+        "Oscillations and Waves",
+        "Electrostatics",
+        "Current Electricity",
+        "Magnetic Effects of Current",
+        "Magnetism",
+        "Electromagnetic Induction",
+        "Optics",
+        "Modern Physics",
+        "Semiconductor Electronics"
+      ]
+    },
+    "Chemistry": {
+      title: "BITSAT Chemistry",
+      chapters: [
+        "Atomic Structure",
+        "Chemical Bonding",
+        "States of Matter",
+        "Thermodynamics",
+        "Chemical Equilibrium",
+        "Solutions",
+        "Electrochemistry",
+        "Chemical Kinetics",
+        "Surface Chemistry",
+        "Periodic Table",
+        "Organic Chemistry Basics",
+        "Hydrocarbons",
+        "Organic Compounds with Functional Groups",
+        "Biomolecules",
+        "Polymers",
+        "Chemistry in Everyday Life"
+      ]
+    },
+    "Mathematics": {
+      title: "BITSAT Mathematics",
+      chapters: [
+        "Sets and Functions",
+        "Complex Numbers",
+        "Matrices and Determinants",
+        "Permutations and Combinations",
+        "Mathematical Induction",
+        "Binomial Theorem",
+        "Sequences and Series",
+        "Limits and Derivatives",
+        "Integral Calculus",
+        "Differential Equations",
+        "Coordinate Geometry",
+        "Vectors and 3D Geometry",
+        "Statistics and Probability",
+        "Trigonometry",
+        "Mathematical Reasoning"
+      ]
+    }
+  },
   "ICSE": {
     "8": {
       "Mathematics": {
