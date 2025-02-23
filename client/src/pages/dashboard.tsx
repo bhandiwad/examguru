@@ -52,7 +52,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { StrengthsWeaknessAnalysis } from "@/components/StrengthsWeaknessAnalysis";
 
 type AttemptWithExam = Attempt & { exam: Exam };
-type DifficultyLevel = "Easy" | "Medium" | "Hard";
+type DifficultyLevel = "Beginner" | "Foundation" | "Easy" | "Medium" | "Advanced" | "Hard" | "Expert" | "Olympiad";
 
 function formatDateTime(date: string | Date) {
   return new Date(date).toLocaleString("en-US", {
@@ -414,11 +414,11 @@ export default function Dashboard() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            {["Easy", "Medium", "Hard"].map((level) => (
+                            {DIFFICULTIES.map((level) => (
                               <DropdownMenuItem
                                 key={level}
                                 onClick={() =>
-                                  handleDifficultyChange(exam.id, level as DifficultyLevel)
+                                  handleDifficultyChange(exam.id, level)
                                 }
                                 disabled={level === exam.difficulty || modifyingExamId === exam.id}
                               >
