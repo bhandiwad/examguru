@@ -1,0 +1,9 @@
+{
+  "modelName": "gpt-4",
+  "options": {
+    "temperature": 0.7,
+    "maxTokens": 2000,
+    "defaultImageSize": "1024x1024",
+    "defaultImageQuality": "standard"
+  }
+}

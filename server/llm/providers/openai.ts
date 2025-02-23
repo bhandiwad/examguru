@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import { ILLMProvider, CompletionRequest, CompletionResponse, ImageGenerationRequest, ImageGenerationResponse, LLMConfig } from "../types";
+import { registerLLMProvider } from "../factory";
 
 export class OpenAIProvider implements ILLMProvider {
   private client: OpenAI;
@@ -14,14 +15,33 @@ export class OpenAIProvider implements ILLMProvider {
   }
 
   async generateCompletion(request: CompletionRequest): Promise<CompletionResponse> {
-    const messages = request.messages.map(msg => ({
-      role: msg.role,
-      content: Array.isArray(msg.content) ? msg.content : msg.content
-    }));
+    // Convert our generic message format to OpenAI's chat API format
+    const messages = request.messages.map(msg => {
+      const messageBase = {
+        role: msg.role,
+        content: typeof msg.content === 'string' ? msg.content : undefined
+      };
+
+      // Handle array content format for multimodal messages
+      if (Array.isArray(msg.content)) {
+        return {
+          ...messageBase,
+          content: msg.content.map(content => {
+            if (content.type === 'text') {
+              return { type: 'text', text: content.text };
+            } else {
+              return { type: 'image_url', image_url: content.image_url };
+            }
+          })
+        };
+      }
+
+      return messageBase;
+    });
 
     const response = await this.client.chat.completions.create({
       model: this.config.modelName || "gpt-4",
-      messages,
+      messages: messages as any, // Type assertion needed due to OpenAI types limitation
       temperature: request.temperature,
       max_tokens: request.maxTokens,
       response_format: request.responseFormat,
@@ -33,18 +53,12 @@ export class OpenAIProvider implements ILLMProvider {
   }
 
   async generateImage(request: ImageGenerationRequest): Promise<ImageGenerationResponse> {
-    const validSizes = ["256x256", "512x512", "1024x1024", "1792x1024", "1024x1792"] as const;
-    const validQualities = ["standard", "hd"] as const;
-
-    const size = validSizes.includes(request.size as any) ? request.size : "1024x1024";
-    const quality = validQualities.includes(request.quality as any) ? request.quality : "standard";
-
     const response = await this.client.images.generate({
       model: "dall-e-3",
       prompt: request.prompt,
       n: request.n || 1,
-      size: size as any,
-      quality: quality as any,
+      size: (request.size || "1024x1024") as any,
+      quality: (request.quality || "standard") as any,
     });
 
     return {
@@ -52,3 +66,6 @@ export class OpenAIProvider implements ILLMProvider {
     };
   }
 }
+
+// Register the OpenAI provider immediately
+registerLLMProvider("openai", OpenAIProvider);

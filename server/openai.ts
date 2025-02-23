@@ -1,4 +1,4 @@
-import { defaultProvider } from "./llm/factory";
+import { getDefaultProvider } from "./llm/factory";
 import { CompletionRequest, ImageGenerationRequest } from "./llm/types";
 
 export async function generateQuestions(
@@ -168,7 +168,7 @@ export async function generateQuestions(
 
   try {
     console.log("Sending prompt to LLM provider");
-    const response = await defaultProvider.generateCompletion({
+    const response = await getDefaultProvider().generateCompletion({
       messages: [
         {
           role: "system",
@@ -225,7 +225,7 @@ export async function generateQuestions(
     for (const question of questions) {
       if (question.imageDescription) {
         try {
-          const imageResponse = await defaultProvider.generateImage?.({
+          const imageResponse = await getDefaultProvider().generateImage?.({
             prompt: `Create a simple, 2D black and white diagram for a physics question: ${question.imageDescription}. 
             The diagram should be minimalist, clear, and focus on the key physics concept. 
             Use only black lines on white background, no colors or shading.`,
@@ -253,7 +253,7 @@ export async function generateQuestions(
 
 export async function evaluateAnswers(imageBase64: string, questions: any) {
   try {
-    const response = await defaultProvider.generateCompletion({
+    const response = await getDefaultProvider().generateCompletion({
       messages: [
         {
           role: "user",
@@ -331,7 +331,7 @@ export async function evaluateAnswers(imageBase64: string, questions: any) {
 
 export async function analyzeQuestionPaperTemplate(imageBase64: string) {
   try {
-    const response = await defaultProvider.generateCompletion({
+    const response = await getDefaultProvider().generateCompletion({
       messages: [
         {
           role: "user",
@@ -431,7 +431,7 @@ export async function generateTutorResponse(
       { role: "user", content: message }
     ];
 
-    const response = await defaultProvider.generateCompletion({
+    const response = await getDefaultProvider().generateCompletion({
       messages,
       temperature: 0.7,
       maxTokens: 1000
@@ -496,7 +496,7 @@ export async function adjustQuestionDifficulty(
   {"questions": [...array of adjusted questions with same structure as input...]}`;
 
   try {
-    const response = await defaultProvider.generateCompletion({
+    const response = await getDefaultProvider().generateCompletion({
       messages: [
         {
           role: "system",
@@ -636,7 +636,7 @@ export async function analyzeStudentSkills(attempts: any[]) {
       ]
     }`;
 
-    const response = await defaultProvider.generateCompletion({
+    const response = await getDefaultProvider().generateCompletion({
       messages: [
         {
           role: "system",

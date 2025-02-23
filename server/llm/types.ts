@@ -13,7 +13,7 @@ export interface MessageContent {
 }
 
 export interface LLMConfig {
-  provider: "openai" | "llama" | "deepseek";
+  provider: string; // Generic provider identifier
   apiKey?: string;
   apiEndpoint?: string;
   modelName?: string;
