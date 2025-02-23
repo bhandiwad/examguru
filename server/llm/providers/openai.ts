@@ -1,6 +1,5 @@
 import OpenAI from "openai";
 import { ILLMProvider, CompletionRequest, CompletionResponse, ImageGenerationRequest, ImageGenerationResponse, LLMConfig } from "../types";
-import { registerLLMProvider } from "../factory";
 
 export class OpenAIProvider implements ILLMProvider {
   private client: OpenAI;
@@ -14,9 +13,30 @@ export class OpenAIProvider implements ILLMProvider {
     });
   }
 
+  private getSystemPrompt(context?: string): string | undefined {
+    if (!this.config.systemPrompts) return undefined;
+
+    if (!context) return this.config.systemPrompts.default;
+
+    if (context in this.config.systemPrompts) {
+      return this.config.systemPrompts[context as keyof typeof this.config.systemPrompts];
+    }
+
+    // Check custom prompts if context not found in standard ones
+    return this.config.systemPrompts.custom?.[context];
+  }
+
   async generateCompletion(request: CompletionRequest): Promise<CompletionResponse> {
+    // Get appropriate system prompt based on context
+    const systemPrompt = this.getSystemPrompt(request.context);
+
+    // If there's a system prompt and no system message in request, add it
+    const messages = systemPrompt && !request.messages.some(msg => msg.role === 'system')
+      ? [{ role: 'system' as const, content: systemPrompt }, ...request.messages]
+      : request.messages;
+
     // Convert our generic message format to OpenAI's chat API format
-    const messages = request.messages.map(msg => {
+    const formattedMessages = messages.map(msg => {
       const messageBase = {
         role: msg.role,
         content: typeof msg.content === 'string' ? msg.content : undefined
@@ -41,7 +61,7 @@ export class OpenAIProvider implements ILLMProvider {
 
     const response = await this.client.chat.completions.create({
       model: this.config.modelName || "gpt-4",
-      messages: messages as any, // Type assertion needed due to OpenAI types limitation
+      messages: formattedMessages as any, // Type assertion needed due to OpenAI types limitation
       temperature: request.temperature,
       max_tokens: request.maxTokens,
       response_format: request.responseFormat,
@@ -66,6 +86,3 @@ export class OpenAIProvider implements ILLMProvider {
     };
   }
 }
-
-// Register the OpenAI provider immediately
-registerLLMProvider("openai", OpenAIProvider);

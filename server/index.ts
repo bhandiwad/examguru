@@ -40,6 +40,7 @@ app.use((req, res, next) => {
 (async () => {
   try {
     // Initialize LLM system before setting up routes
+    console.log("Initializing LLM system...");
     await initializeLLM();
     console.log("LLM system initialized successfully");
 

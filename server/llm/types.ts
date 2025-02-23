@@ -17,6 +17,15 @@ export interface LLMConfig {
   apiKey?: string;
   apiEndpoint?: string;
   modelName?: string;
+  // System prompts for different contexts
+  systemPrompts?: {
+    default?: string;
+    questionGeneration?: string;
+    evaluation?: string;
+    tutoring?: string;
+    analysis?: string;
+    custom?: Record<string, string>;
+  };
   // Additional provider-specific configuration
   options?: Record<string, any>;
 }
@@ -26,6 +35,8 @@ export interface CompletionRequest {
   temperature?: number;
   maxTokens?: number;
   responseFormat?: { type: "text" | "json_object" };
+  // Optional context to select specific system prompt
+  context?: "default" | "questionGeneration" | "evaluation" | "tutoring" | "analysis" | string;
 }
 
 export interface ImageGenerationRequest {

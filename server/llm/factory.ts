@@ -2,7 +2,7 @@ import { LLMConfig, ILLMProvider } from "./types";
 import { loadConfig } from "./config";
 
 // Provider class registry
-const providerRegistry = new Map<string, new (config: LLMConfig) => ILLMProvider>();
+const providers = new Map<string, new (config: LLMConfig) => ILLMProvider>();
 
 // Keep track of initialization state
 let isInitialized = false;
@@ -12,12 +12,12 @@ export function registerLLMProvider(
   providerName: string,
   providerClass: new (config: LLMConfig) => ILLMProvider
 ) {
-  providerRegistry.set(providerName, providerClass);
+  providers.set(providerName, providerClass);
 }
 
 export class LLMFactory {
   static createProvider(config: LLMConfig = loadConfig()): ILLMProvider {
-    const ProviderClass = providerRegistry.get(config.provider);
+    const ProviderClass = providers.get(config.provider);
 
     if (!ProviderClass) {
       throw new Error(`No provider registered for ${config.provider}. Please ensure the provider is registered before use.`);
@@ -31,7 +31,7 @@ export class LLMFactory {
   }
 
   static listProviders(): string[] {
-    return Array.from(providerRegistry.keys());
+    return Array.from(providers.keys());
   }
 }
 
@@ -41,20 +41,31 @@ export async function initializeLLM() {
     return;
   }
 
-  // Import and register all providers
-  await Promise.all([
-    import('./providers/openai').then(module => {
-      // Provider registration happens in the module
-      console.log('OpenAI provider registered');
-    }),
-    // Add other provider imports here as needed
-  ]);
+  try {
+    // Dynamically import all provider modules
+    const modules = await Promise.all([
+      import('./providers/openai').then(module => module.OpenAIProvider),
+      // Add other provider imports as needed
+    ]);
 
-  // Create the default provider instance
-  defaultProviderInstance = LLMFactory.createProvider();
+    // Register the imported providers
+    modules.forEach((ProviderClass, index) => {
+      const providerNames = ['openai']; // Add other provider names as needed
+      if (ProviderClass) {
+        registerLLMProvider(providerNames[index], ProviderClass);
+        console.log(`Registered provider: ${providerNames[index]}`);
+      }
+    });
 
-  isInitialized = true;
-  console.log('LLM system initialized with providers:', LLMFactory.listProviders());
+    // Create the default provider instance
+    defaultProviderInstance = LLMFactory.createProvider();
+
+    isInitialized = true;
+    console.log('LLM system initialized with providers:', LLMFactory.listProviders());
+  } catch (error) {
+    console.error('Failed to initialize LLM system:', error);
+    throw error;
+  }
 }
 
 // Export a getter for the default provider that ensures initialization
@@ -67,6 +78,3 @@ export function getDefaultProvider(): ILLMProvider {
   }
   return defaultProviderInstance;
 }
-
-// Import providers here to register them
-import "./providers/openai";

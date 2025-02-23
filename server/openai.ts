@@ -171,17 +171,14 @@ export async function generateQuestions(
     const response = await getDefaultProvider().generateCompletion({
       messages: [
         {
-          role: "system",
-          content: "You are an expert exam question generator specializing in creating challenging questions. You must respond with a valid JSON object containing a questions array. Each question must follow the specified format exactly."
-        },
-        {
           role: "user",
           content: promptContent
         }
       ],
       temperature: 0.7,
       maxTokens: 2000,
-      responseFormat: { type: "json_object" }
+      responseFormat: { type: "json_object" },
+      context: "questionGeneration" // This will use the question generation system prompt
     });
 
     if (!response.content) {
@@ -308,7 +305,8 @@ export async function evaluateAnswers(imageBase64: string, questions: any) {
       ],
       maxTokens: 4000,
       temperature: 0.3,
-      responseFormat: { type: "json_object" }
+      responseFormat: { type: "json_object" },
+      context: "evaluation"
     });
 
     if (!response.content) {
@@ -434,7 +432,8 @@ export async function generateTutorResponse(
     const response = await getDefaultProvider().generateCompletion({
       messages,
       temperature: 0.7,
-      maxTokens: 1000
+      maxTokens: 1000,
+      context: "tutoring"
     });
 
     if (!response.content) {
@@ -648,7 +647,8 @@ export async function analyzeStudentSkills(attempts: any[]) {
         }
       ],
       temperature: 0.7,
-      responseFormat: { type: "json_object" }
+      responseFormat: { type: "json_object" },
+      context: "analysis"
     });
 
     if (!response.content) {
