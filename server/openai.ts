@@ -1,5 +1,5 @@
 import { getDefaultProvider } from "./llm/factory";
-import { CompletionRequest, ImageGenerationRequest } from "./llm/types";
+import { CompletionRequest, ImageGenerationRequest, LLMMessage } from "./llm/types";
 
 export async function generateQuestions(
   subject: string,
@@ -171,7 +171,7 @@ export async function generateQuestions(
     const response = await getDefaultProvider().generateCompletion({
       messages: [
         {
-          role: "user",
+          role: "user" as const,
           content: promptContent
         }
       ],
@@ -195,7 +195,6 @@ export async function generateQuestions(
       throw new Error("Invalid JSON response from LLM provider");
     }
 
-    // Handle both direct questions array and nested sections format
     let questions = parsedResponse.questions;
     if (!questions && parsedResponse.sections) {
       questions = parsedResponse.sections.flatMap((section: any) => section.questions || []);
@@ -206,7 +205,6 @@ export async function generateQuestions(
       throw new Error("LLM response missing questions array");
     }
 
-    // Validate required fields
     for (const question of questions) {
       if (!question.type || !question.text || !question.marks || !question.section ||
         !question.chapter || !question.topic || !question.keyConcepts || !question.studyResources) {
@@ -218,7 +216,6 @@ export async function generateQuestions(
       }
     }
 
-    // Generate images for questions that need them
     for (const question of questions) {
       if (question.imageDescription) {
         try {
@@ -236,7 +233,7 @@ export async function generateQuestions(
           }
         } catch (error) {
           console.error("Failed to generate image for question:", error);
-          // Continue without the image if generation fails
+          
         }
       }
     }
@@ -253,7 +250,7 @@ export async function evaluateAnswers(imageBase64: string, questions: any) {
     const response = await getDefaultProvider().generateCompletion({
       messages: [
         {
-          role: "user",
+          role: "user" as const,
           content: [
             {
               type: "text",
@@ -332,7 +329,7 @@ export async function analyzeQuestionPaperTemplate(imageBase64: string) {
     const response = await getDefaultProvider().generateCompletion({
       messages: [
         {
-          role: "user",
+          role: "user" as const,
           content: [
             {
               type: "text",
@@ -390,7 +387,7 @@ export async function generateTutorResponse(
   message: string,
   subject: string,
   grade: string,
-  history: { role: string; content: string }[]
+  history: { role: "system" | "user" | "assistant"; content: string }[]
 ) {
   try {
     const systemPrompt = subject && grade
@@ -419,14 +416,13 @@ export async function generateTutorResponse(
         9. Assist with educational resource recommendations
         10. Maintain a helpful and encouraging tone`;
 
-    // Ensure messages are properly formatted for the OpenAI API
-    const messages = [
-      { role: "system", content: systemPrompt },
+    const messages: LLMMessage[] = [
+      { role: "system" as const, content: systemPrompt },
       ...history.map(msg => ({
-        role: msg.role as "system" | "user" | "assistant",
+        role: msg.role,
         content: msg.content
       })),
-      { role: "user", content: message }
+      { role: "user" as const, content: message }
     ];
 
     const response = await getDefaultProvider().generateCompletion({
@@ -441,7 +437,7 @@ export async function generateTutorResponse(
     }
 
     return {
-      role: "assistant",
+      role: "assistant" as const,
       content: response.content
     };
   } catch (error: any) {
@@ -498,11 +494,11 @@ export async function adjustQuestionDifficulty(
     const response = await getDefaultProvider().generateCompletion({
       messages: [
         {
-          role: "system",
+          role: "system" as const,
           content: "You are an expert exam question generator specializing in adapting question difficulty while maintaining educational value. You must respond with valid JSON only."
         },
         {
-          role: "user",
+          role: "user" as const,
           content: prompt
         }
       ],
@@ -638,11 +634,11 @@ export async function analyzeStudentSkills(attempts: any[]) {
     const response = await getDefaultProvider().generateCompletion({
       messages: [
         {
-          role: "system",
+          role: "system" as const,
           content: "You are an expert educational analyst specializing in identifying student strengths, learning styles, and providing detailed, actionable insights. Your analysis should be specific, evidence-based, and focused on practical improvements."
         },
         {
-          role: "user",
+          role: "user" as const,
           content: prompt
         }
       ],

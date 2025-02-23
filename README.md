@@ -58,68 +58,13 @@ VITE_FIREBASE_PROJECT_ID=your_firebase_project_id
 VITE_FIREBASE_APP_ID=your_firebase_app_id
 ```
 
-## LLM Provider Configuration
+## Documentation
 
-### Provider Setup
-
-The system supports multiple LLM providers through a modular architecture. Configure providers in `config/llm/<provider>.json`:
-
-```json
-{
-  "modelName": "gpt-4",
-  "apiEndpoint": "https://api.openai.com/v1",
-  "options": {
-    "temperature": 0.7,
-    "maxTokens": 2000
-  },
-  "systemPrompts": {
-    "default": "You are a helpful AI assistant.",
-    "questionGeneration": "You are an expert exam question generator...",
-    "evaluation": "You are an assessment expert...",
-    "tutoring": "You are a patient and knowledgeable tutor...",
-    "analysis": "You are a performance analysis expert...",
-    "custom": {
-      "customContext1": "Custom prompt for specific use case...",
-      "customContext2": "Another custom prompt..."
-    }
-  }
-}
-```
-
-### Adding New Providers
-
-1. Create a provider implementation in `server/llm/providers/<provider>.ts`
-2. Add provider configuration in `config/llm/<provider>.json`
-3. Register the provider in `server/llm/factory.ts`
-
-## Installation
-
-1. Clone the repository:
-```bash
-git clone https://github.com/yourusername/examguru.git
-cd examguru
-```
-
-2. Install dependencies:
-```bash
-npm install
-```
-
-3. Set up the database:
-```bash
-npm run db:push
-```
-
-4. Configure your LLM provider:
-- Copy `config/llm/provider.example.json` to `config/llm/<your-provider>.json`
-- Update the configuration with your provider's settings
-
-5. Start the development server:
-```bash
-npm run dev
-```
-
-The application will be available at `http://localhost:5000`.
+- [Features Overview](FEATURES.md)
+- [LLM Integration Guide](docs/LLM_INTEGRATION.md)
+- [Contributing Guidelines](CONTRIBUTING.md)
+- [Deployment Guide](DEPLOYMENT.md)
+- [Changelog](CHANGELOG.md)
 
 ## Project Structure
 

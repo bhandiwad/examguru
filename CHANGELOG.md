@@ -5,6 +5,10 @@ All notable changes to ExamGuru will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- Comprehensive features documentation
+  - Created FEATURES.md with detailed feature breakdown
+  - Enhanced README.md with improved structure
+  - Added more detailed technical documentation
 - Modular LLM provider system
   - Provider-agnostic architecture
   - Configurable system prompts
@@ -20,9 +24,11 @@ All notable changes to ExamGuru will be documented in this file.
 - Updated documentation with LLM provider configuration
 - Improved chat interface styling and layout
 - Enhanced error handling in AI interactions
+- Reorganized project structure for better maintainability
 
 ### Documentation
-- Added comprehensive README.md
+- Added comprehensive FEATURES.md
+- Enhanced README.md with improved structure
 - Created LLM integration guide
 - Added provider configuration examples
 - Updated setup instructions
