@@ -138,6 +138,7 @@ function QuestionFeedback({ feedback }: { feedback: any }) {
 }
 
 const ITEMS_PER_PAGE = 6;
+const ATTEMPTS_PER_PAGE = 6;
 
 export default function Dashboard() {
   const queryClient = useQueryClient();
@@ -147,6 +148,8 @@ export default function Dashboard() {
   const [currentPage, setCurrentPage] = useState(1);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [modifyingExamId, setModifyingExamId] = useState<number | null>(null);
+  const [attemptsCurrentPage, setAttemptsCurrentPage] = useState(1);
+
 
   const { data: attempts, isLoading: attemptsLoading } = useQuery<AttemptWithExam[]>({
     queryKey: ["/api/attempts"],
@@ -483,200 +486,240 @@ export default function Dashboard() {
                 ))}
               </div>
             ) : attempts && attempts.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {attempts.map((attempt) => (
-                  <Card key={attempt.id} className="relative">
-                    <CardHeader>
-                      <CardTitle>{attempt.exam.subject}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        <div className="flex items-center gap-2 text-sm text-gray-500">
-                          <ClockIcon className="h-4 w-4" />
-                          <span>Started: {formatDateTime(attempt.startTime)}</span>
-                        </div>
-
-                        {attempt.endTime && (
-                          <div className="flex items-center gap-2 text-sm text-gray-500">
-                            <ClockIcon className="h-4 w-4" />
-                            <span>Completed: {formatDateTime(attempt.endTime)}</span>
-                          </div>
-                        )}
-
-                        <div className="flex items-center gap-2 text-sm text-gray-500">
-                          <BookOpenIcon className="h-4 w-4" />
-                          <span>Curriculum: {attempt.exam.curriculum}</span>
-                        </div>
-
-                        {attempt.score !== null && (
-                          <div className="flex items-center gap-2">
-                            <StarIcon className="h-4 w-4 text-primary" />
-                            <div className="flex-1">
-                              <div className="flex justify-between mb-1">
-                                <span className="text-sm font-medium">Score</span>
-                                <span className="text-sm font-medium">
-                                  {attempt.score}%
-                                </span>
-                              </div>
-                              <Progress value={attempt.score} />
+              <>
+                <div className="flex justify-end mb-4">
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        setAttemptsCurrentPage((prev) => Math.max(1, prev - 1))
+                      }
+                      disabled={attemptsCurrentPage === 1}
+                    >
+                      Previous
+                    </Button>
+                    <span className="px-4 py-2 text-sm">
+                      Page {attemptsCurrentPage} of{" "}
+                      {Math.ceil(attempts.length / ATTEMPTS_PER_PAGE)}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        setAttemptsCurrentPage((prev) =>
+                          Math.min(Math.ceil(attempts.length / ATTEMPTS_PER_PAGE), prev + 1)
+                        )
+                      }
+                      disabled={
+                        attemptsCurrentPage ===
+                        Math.ceil(attempts.length / ATTEMPTS_PER_PAGE)
+                      }
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {attempts
+                    .slice(
+                      (attemptsCurrentPage - 1) * ATTEMPTS_PER_PAGE,
+                      attemptsCurrentPage * ATTEMPTS_PER_PAGE
+                    )
+                    .map((attempt) => (
+                      <Card key={attempt.id} className="relative">
+                        <CardHeader>
+                          <CardTitle>{attempt.exam.subject}</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-4">
+                            <div className="flex items-center gap-2 text-sm text-gray-500">
+                              <ClockIcon className="h-4 w-4" />
+                              <span>Started: {formatDateTime(attempt.startTime)}</span>
                             </div>
-                          </div>
-                        )}
 
-                        {attempt.feedback && (
-                          <Accordion type="single" collapsible className="w-full">
-                            <AccordionItem value="feedback">
-                              <AccordionTrigger className="text-sm font-medium">
-                                Detailed Evaluation
-                              </AccordionTrigger>
-                              <AccordionContent>
-                                {attempt.feedback && (
-                                  <div className="space-y-6 text-sm">
-                                    {(attempt.feedback as any).overall && (
-                                      <>
-                                        <div>
-                                          <h4 className="font-medium mb-2">
-                                            Overview
-                                          </h4>
-                                          <p className="text-gray-600">
-                                            {(attempt.feedback as any).overall
-                                              .summary}
-                                          </p>
-                                        </div>
+                            {attempt.endTime && (
+                              <div className="flex items-center gap-2 text-sm text-gray-500">
+                                <ClockIcon className="h-4 w-4" />
+                                <span>Completed: {formatDateTime(attempt.endTime)}</span>
+                              </div>
+                            )}
 
-                                        {Array.isArray((attempt.feedback as any).overall.strengths) && (
-                                          <div>
-                                            <h4 className="font-medium mb-2">
-                                              Strengths
-                                            </h4>
-                                            <ul className="list-disc pl-4 space-y-1">
-                                              {(attempt.feedback as any).overall.strengths.map(
-                                                (strength: string, i: number) => (
-                                                  <li key={i} className="text-gray-600">
-                                                    {strength}
-                                                  </li>
-                                                )
-                                              )}
-                                            </ul>
-                                          </div>
-                                        )}
+                            <div className="flex items-center gap-2 text-sm text-gray-500">
+                              <BookOpenIcon className="h-4 w-4" />
+                              <span>Curriculum: {attempt.exam.curriculum}</span>
+                            </div>
 
-                                        {Array.isArray((attempt.feedback as any).overall.areas_for_improvement) && (
-                                          <div>
-                                            <h4 className="font-medium mb-2">
-                                              Areas for Improvement
-                                            </h4>
-                                            <ul className="list-disc pl-4 space-y-1">
-                                              {(attempt.feedback as any).overall.areas_for_improvement.map(
-                                                (area: string, i: number) => (
-                                                  <li key={i} className="text-gray-600">
-                                                    {area}
-                                                  </li>
-                                                )
-                                              )}
-                                            </ul>
-                                          </div>
-                                        )}
-
-                                        {Array.isArray((attempt.feedback as any).overall.learning_recommendations) && (
-                                          <div>
-                                            <h4 className="font-medium mb-2">
-                                              Learning Recommendations
-                                            </h4>
-                                            <ul className="list-disc pl-4 space-y-1">
-                                              {(attempt.feedback as any).overall.learning_recommendations.map(
-                                                (rec: any, i: number) => (
-                                                  <li key={i} className="text-gray-600">
-                                                    {rec.topic && <strong>{rec.topic}: </strong>}
-                                                    {rec.recommendation}
-                                                    {Array.isArray(rec.resources) && rec.resources.map((resource: any, j: number) => (
-                                                      <div key={j} className="ml-4 mt-1">
-                                                        <span className="text-sm text-muted-foreground">
-                                                          {resource.type}: {resource.title}
-                                                        </span>
-                                                        {resource.link && (
-                                                          <a
-                                                            href={resource.link}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="ml-2 text-sm text-primary hover:underline"
-                                                          >
-                                                            View →
-                                                          </a>
-                                                        )}
-                                                      </div>
-                                                    ))}
-                                                  </li>
-                                                )
-                                              )}
-                                            </ul>
-                                          </div>
-                                        )}
-                                      </>
-                                    )}
-                                    {Array.isArray(attempt.feedback.questions) && (
-                                      <div className="mt-6">
-                                        <h4 className="font-medium mb-4">
-                                          Question-by-Question Analysis
-                                        </h4>
-                                        <div className="space-y-6">
-                                          {attempt.feedback.questions.map(
-                                            (questionFeedback: any) => (
-                                              <QuestionFeedback
-                                                key={questionFeedback.questionNumber}
-                                                feedback={questionFeedback}
-                                              />
-                                            )
-                                          )}
-                                        </div>
-                                      </div>
-                                    )}
-
-                                    {(attempt.feedback as any).performanceAnalytics?.byChapter && (
-                                      <div className="mt-6">
-                                        <h4 className="font-medium mb-4">
-                                          Chapter-wise Performance
-                                        </h4>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                          {Object.entries(
-                                            (attempt.feedback as any).performanceAnalytics.byChapter
-                                          ).map(([chapter, data]: [string, any]) => (
-                                            <Card key={chapter} className="p-4">
-                                              <h5 className="font-medium mb-2">
-                                                {chapter}
-                                              </h5>
-                                              <Progress value={data.score} className="mb-2" />
-                                              <p className="text-sm text-muted-foreground mb-2">
-                                                Score: {data.score}%
-                                              </p>
-                                              {Array.isArray(data.recommendations) && (
-                                                <div className="text-sm">
-                                                  <strong>Recommendations:</strong>
-                                                  <ul className="list-disc pl-4 mt-1">
-                                                    {data.recommendations.map(
-                                                      (rec: string, i: number) => (
-                                                        <li key={i}>{rec}</li>
-                                                      )
-                                                    )}
-                                                  </ul>
-                                                </div>
-                                              )}
-                                            </Card>
-                                          ))}
-                                        </div>
-                                      </div>
-                                    )}
+                            {attempt.score !== null && (
+                              <div className="flex items-center gap-2">
+                                <StarIcon className="h-4 w-4 text-primary" />
+                                <div className="flex-1">
+                                  <div className="flex justify-between mb-1">
+                                    <span className="text-sm font-medium">Score</span>
+                                    <span className="text-sm font-medium">
+                                      {attempt.score}%
+                                    </span>
                                   </div>
-                                )}
-                              </AccordionContent>
-                            </AccordionItem>
-                          </Accordion>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                                  <Progress value={attempt.score} />
+                                </div>
+                              </div>
+                            )}
+
+                            {attempt.feedback && (
+                              <Accordion type="single" collapsible className="w-full">
+                                <AccordionItem value="feedback">
+                                  <AccordionTrigger className="text-sm font-medium">
+                                    Detailed Evaluation
+                                  </AccordionTrigger>
+                                  <AccordionContent>
+                                    {attempt.feedback && (
+                                      <div className="space-y-6 text-sm">
+                                        {(attempt.feedback as any).overall && (
+                                          <>
+                                            <div>
+                                              <h4 className="font-medium mb-2">
+                                                Overview
+                                              </h4>
+                                              <p className="text-gray-600">
+                                                {(attempt.feedback as any).overall
+                                                  .summary}
+                                              </p>
+                                            </div>
+
+                                            {Array.isArray((attempt.feedback as any).overall.strengths) && (
+                                              <div>
+                                                <h4 className="font-medium mb-2">
+                                                  Strengths
+                                                </h4>
+                                                <ul className="list-disc pl-4 space-y-1">
+                                                  {(attempt.feedback as any).overall.strengths.map(
+                                                    (strength: string, i: number) => (
+                                                      <li key={i} className="text-gray-600">
+                                                        {strength}
+                                                      </li>
+                                                    )
+                                                  )}
+                                                </ul>
+                                              </div>
+                                            )}
+
+                                            {Array.isArray((attempt.feedback as any).overall.areas_for_improvement) && (
+                                              <div>
+                                                <h4 className="font-medium mb-2">
+                                                  Areas for Improvement
+                                                </h4>
+                                                <ul className="list-disc pl-4 space-y-1">
+                                                  {(attempt.feedback as any).overall.areas_for_improvement.map(
+                                                    (area: string, i: number) => (
+                                                      <li key={i} className="text-gray-600">
+                                                        {area}
+                                                      </li>
+                                                    )
+                                                  )}
+                                                </ul>
+                                              </div>
+                                            )}
+
+                                            {Array.isArray((attempt.feedback as any).overall.learning_recommendations) && (
+                                              <div>
+                                                <h4 className="font-medium mb-2">
+                                                  Learning Recommendations
+                                                </h4>
+                                                <ul className="list-disc pl-4 space-y-1">
+                                                  {(attempt.feedback as any).overall.learning_recommendations.map(
+                                                    (rec: any, i: number) => (
+                                                      <li key={i} className="text-gray-600">
+                                                        {rec.topic && <strong>{rec.topic}: </strong>}
+                                                        {rec.recommendation}
+                                                        {Array.isArray(rec.resources) && rec.resources.map((resource: any, j: number) => (
+                                                          <div key={j} className="ml-4 mt-1">
+                                                            <span className="text-sm text-muted-foreground">
+                                                              {resource.type}: {resource.title}
+                                                            </span>
+                                                            {resource.link && (
+                                                              <a
+                                                                href={resource.link}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="ml-2 text-sm text-primary hover:underline"
+                                                              >
+                                                                View →
+                                                              </a>
+                                                            )}
+                                                          </div>
+                                                        ))}
+                                                      </li>
+                                                    )
+                                                  )}
+                                                </ul>
+                                              </div>
+                                            )}
+                                          </>
+                                        )}
+                                        {Array.isArray(attempt.feedback.questions) && (
+                                          <div className="mt-6">
+                                            <h4 className="font-medium mb-4">
+                                              Question-by-Question Analysis
+                                            </h4>
+                                            <div className="space-y-6">
+                                              {attempt.feedback.questions.map(
+                                                (questionFeedback: any) => (
+                                                  <QuestionFeedback
+                                                    key={questionFeedback.questionNumber}
+                                                    feedback={questionFeedback}
+                                                  />
+                                                )
+                                              )}
+                                            </div>
+                                          </div>
+                                        )}
+
+                                        {(attempt.feedback as any).performanceAnalytics?.byChapter && (
+                                          <div className="mt-6">
+                                            <h4 className="font-medium mb-4">
+                                              Chapter-wise Performance
+                                            </h4>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                              {Object.entries(
+                                                (attempt.feedback as any).performanceAnalytics.byChapter
+                                              ).map(([chapter, data]: [string, any]) => (
+                                                <Card key={chapter} className="p-4">
+                                                  <h5 className="font-medium mb-2">
+                                                    {chapter}
+                                                  </h5>
+                                                  <Progress value={data.score} className="mb-2" />
+                                                  <p className="text-sm text-muted-foreground mb-2">
+                                                    Score: {data.score}%
+                                                  </p>
+                                                  {Array.isArray(data.recommendations) && (
+                                                    <div className="text-sm">
+                                                      <strong>Recommendations:</strong>
+                                                      <ul className="list-disc pl-4 mt-1">
+                                                        {data.recommendations.map(
+                                                          (rec: string, i: number) => (
+                                                            <li key={i}>{rec}</li>
+                                                          )
+                                                        )}
+                                                      </ul>
+                                                    </div>
+                                                  )}
+                                                </Card>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+                                  </AccordionContent>
+                                </AccordionItem>
+                              </Accordion>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                </div>
+              </>
             ) : (
               <Card className="bg-muted/50">
                 <CardContent className="py-8 text-center text-muted-foreground">
