@@ -1,0 +1,23 @@
+{
+  "modelName": "default-model",
+  "apiEndpoint": "https://api.provider.com/v1",
+  "apiKey": "your-api-key-here",
+  "options": {
+    "temperature": 0.7,
+    "maxTokens": 2000,
+    "topP": 1,
+    "frequencyPenalty": 0,
+    "presencePenalty": 0
+  },
+  "systemPrompts": {
+    "default": "You are a helpful AI assistant specialized in education and exam preparation.",
+    "questionGeneration": "You are an expert exam question generator specializing in creating challenging questions. You must respond with a valid JSON object containing a questions array. Each question must follow the specified format exactly.",
+    "evaluation": "You are an assessment expert focused on providing detailed, constructive feedback on student responses.",
+    "tutoring": "You are a patient and knowledgeable tutor who explains concepts clearly and adapts to the student's level of understanding.",
+    "analysis": "You are a performance analysis expert who provides insights and recommendations based on student performance data.",
+    "custom": {
+      "customContext1": "Custom prompt for specific use case...",
+      "customContext2": "Another custom prompt..."
+    }
+  }
+}
