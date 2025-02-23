@@ -21,12 +21,12 @@ const ChatButton = () => (
     <DialogTrigger asChild>
       <Button 
         size="lg" 
-        className="fixed bottom-4 right-4 rounded-full w-14 h-14 p-0"
+        className="fixed bottom-4 right-4 rounded-full w-14 h-14 p-0 shadow-lg hover:shadow-xl transition-shadow"
       >
         <Bot className="w-6 h-6" />
       </Button>
     </DialogTrigger>
-    <DialogContent className="max-w-4xl h-[80vh] p-0">
+    <DialogContent className="max-w-[90vw] w-[800px] h-[90vh] p-0 overflow-hidden">
       <TutorChat />
     </DialogContent>
   </Dialog>

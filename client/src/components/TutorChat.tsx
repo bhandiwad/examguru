@@ -58,21 +58,21 @@ export function TutorChat({ subject, grade }: { subject?: string; grade?: string
   };
 
   return (
-    <Card className="flex flex-col min-h-[600px] max-h-[calc(100vh-8rem)]">
-      <CardHeader className="border-b">
-        <CardTitle className="flex items-center gap-2">
+    <div className="flex flex-col h-full">
+      <CardHeader className="border-b px-4 py-3 shrink-0">
+        <CardTitle className="flex items-center gap-2 text-lg">
           <MessageSquare className="h-5 w-5" />
           {subject && grade ? `AI Tutor - ${subject} (Grade ${grade})` : 'ExamGuru AI Assistant'}
         </CardTitle>
       </CardHeader>
-      <CardContent className="flex-1 flex flex-col p-0">
+      <div className="flex-1 overflow-hidden flex flex-col min-h-0">
         {error && (
           <Alert variant="destructive" className="m-4 mb-0">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
-        <ScrollArea className="flex-1 h-full px-4">
+        <ScrollArea className="flex-1 px-4">
           <div className="space-y-4 py-4">
             {messages.length === 0 && (
               <div className="text-center text-muted-foreground py-8">
@@ -118,26 +118,28 @@ export function TutorChat({ subject, grade }: { subject?: string; grade?: string
             )}
           </div>
         </ScrollArea>
-        <form onSubmit={handleSubmit} className="flex gap-2 p-4 mt-auto border-t">
-          <Input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask your question..."
-            disabled={chatMutation.isPending}
-            className="flex-1"
-          />
-          <Button type="submit" disabled={chatMutation.isPending}>
-            {chatMutation.isPending ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                Sending...
-              </>
-            ) : (
-              'Send'
-            )}
-          </Button>
+        <form onSubmit={handleSubmit} className="p-4 border-t mt-auto shrink-0">
+          <div className="flex gap-2">
+            <Input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Ask your question..."
+              disabled={chatMutation.isPending}
+              className="flex-1"
+            />
+            <Button type="submit" disabled={chatMutation.isPending}>
+              {chatMutation.isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  Sending...
+                </>
+              ) : (
+                'Send'
+              )}
+            </Button>
+          </div>
         </form>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
