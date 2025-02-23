@@ -1,6 +1,5 @@
-import OpenAI from "openai";
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+import { defaultProvider } from "./llm/factory";
+import { CompletionRequest, ImageGenerationRequest } from "./llm/types";
 
 export async function generateQuestions(
   subject: string,
@@ -168,9 +167,8 @@ export async function generateQuestions(
   }`;
 
   try {
-    console.log("Sending prompt to OpenAI");
-    const response = await openai.chat.completions.create({
-      model: "gpt-4",
+    console.log("Sending prompt to LLM provider");
+    const response = await defaultProvider.generateCompletion({
       messages: [
         {
           role: "system",
@@ -182,21 +180,22 @@ export async function generateQuestions(
         }
       ],
       temperature: 0.7,
-      max_tokens: 2000
+      maxTokens: 2000,
+      responseFormat: { type: "json_object" }
     });
 
-    if (!response.choices[0].message.content) {
-      throw new Error("No content received from OpenAI");
+    if (!response.content) {
+      throw new Error("No content received from LLM provider");
     }
 
-    console.log("Received response from OpenAI");
+    console.log("Received response from LLM provider");
     let parsedResponse;
     try {
-      parsedResponse = JSON.parse(response.choices[0].message.content);
-      console.log("Successfully parsed OpenAI response");
+      parsedResponse = JSON.parse(response.content);
+      console.log("Successfully parsed LLM response");
     } catch (parseError) {
-      console.error("Failed to parse OpenAI response:", parseError);
-      throw new Error("Invalid JSON response from OpenAI");
+      console.error("Failed to parse LLM response:", parseError);
+      throw new Error("Invalid JSON response from LLM provider");
     }
 
     // Handle both direct questions array and nested sections format
@@ -207,7 +206,7 @@ export async function generateQuestions(
 
     if (!questions || !Array.isArray(questions)) {
       console.error("Invalid response structure:", parsedResponse);
-      throw new Error("OpenAI response missing questions array");
+      throw new Error("LLM response missing questions array");
     }
 
     // Validate required fields
@@ -226,8 +225,7 @@ export async function generateQuestions(
     for (const question of questions) {
       if (question.imageDescription) {
         try {
-          const imageResponse = await openai.images.generate({
-            model: "dall-e-3",
+          const imageResponse = await defaultProvider.generateImage?.({
             prompt: `Create a simple, 2D black and white diagram for a physics question: ${question.imageDescription}. 
             The diagram should be minimalist, clear, and focus on the key physics concept. 
             Use only black lines on white background, no colors or shading.`,
@@ -236,7 +234,9 @@ export async function generateQuestions(
             quality: "standard",
           });
 
-          question.image = imageResponse.data[0].url;
+          if (imageResponse) {
+            question.image = imageResponse.url;
+          }
         } catch (error) {
           console.error("Failed to generate image for question:", error);
           // Continue without the image if generation fails
@@ -253,8 +253,7 @@ export async function generateQuestions(
 
 export async function evaluateAnswers(imageBase64: string, questions: any) {
   try {
-    const visionResponse = await openai.chat.completions.create({
-      model: "gpt-4o",
+    const response = await defaultProvider.generateCompletion({
       messages: [
         {
           role: "user",
@@ -307,17 +306,17 @@ export async function evaluateAnswers(imageBase64: string, questions: any) {
           ],
         },
       ],
-      max_tokens: 4000,
+      maxTokens: 4000,
       temperature: 0.3,
-      response_format: { type: "json_object" }
+      responseFormat: { type: "json_object" }
     });
 
-    if (!visionResponse.choices[0].message.content) {
+    if (!response.content) {
       throw new Error("No evaluation content received");
     }
 
     try {
-      const parsedResponse = JSON.parse(visionResponse.choices[0].message.content);
+      const parsedResponse = JSON.parse(response.content);
       console.log("Evaluation completed successfully:", parsedResponse);
       return parsedResponse;
     } catch (parseError) {
@@ -332,8 +331,7 @@ export async function evaluateAnswers(imageBase64: string, questions: any) {
 
 export async function analyzeQuestionPaperTemplate(imageBase64: string) {
   try {
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+    const response = await defaultProvider.generateCompletion({
       messages: [
         {
           role: "user",
@@ -373,15 +371,15 @@ export async function analyzeQuestionPaperTemplate(imageBase64: string) {
           ],
         },
       ],
-      max_tokens: 1000,
-      response_format: { type: "json_object" }
+      maxTokens: 1000,
+      responseFormat: { type: "json_object" }
     });
 
-    if (!response.choices[0].message.content) {
-      throw new Error("No content received from OpenAI");
+    if (!response.content) {
+      throw new Error("No content received from LLM provider");
     }
 
-    const template = JSON.parse(response.choices[0].message.content);
+    const template = JSON.parse(response.content);
     console.log("Extracted template structure:", template);
     return template;
   } catch (error: any) {
@@ -433,20 +431,19 @@ export async function generateTutorResponse(
       { role: "user", content: message }
     ];
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4",
+    const response = await defaultProvider.generateCompletion({
       messages,
       temperature: 0.7,
-      max_tokens: 1000
+      maxTokens: 1000
     });
 
-    if (!response.choices[0].message.content) {
+    if (!response.content) {
       throw new Error("No response generated");
     }
 
     return {
       role: "assistant",
-      content: response.choices[0].message.content
+      content: response.content
     };
   } catch (error: any) {
     console.error("Error generating tutor response:", error);
@@ -499,8 +496,7 @@ export async function adjustQuestionDifficulty(
   {"questions": [...array of adjusted questions with same structure as input...]}`;
 
   try {
-    const response = await openai.chat.completions.create({
-      model: "gpt-4",
+    const response = await defaultProvider.generateCompletion({
       messages: [
         {
           role: "system",
@@ -514,11 +510,11 @@ export async function adjustQuestionDifficulty(
       temperature: 0.7
     });
 
-    if (!response.choices[0].message.content) {
-      throw new Error("No content received from OpenAI");
+    if (!response.content) {
+      throw new Error("No content received from LLM provider");
     }
 
-    const adjustedQuestions = JSON.parse(response.choices[0].message.content);
+    const adjustedQuestions = JSON.parse(response.content);
     console.log("Successfully adjusted questions difficulty");
 
     if (!adjustedQuestions.questions || !Array.isArray(adjustedQuestions.questions)) {
@@ -640,8 +636,7 @@ export async function analyzeStudentSkills(attempts: any[]) {
       ]
     }`;
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4",
+    const response = await defaultProvider.generateCompletion({
       messages: [
         {
           role: "system",
@@ -653,14 +648,14 @@ export async function analyzeStudentSkills(attempts: any[]) {
         }
       ],
       temperature: 0.7,
-      response_format: { type: "json_object" }
+      responseFormat: { type: "json_object" }
     });
 
-    if (!response.choices[0].message.content) {
-      throw new Error("No content received from OpenAI");
+    if (!response.content) {
+      throw new Error("No content received from LLM provider");
     }
 
-    return JSON.parse(response.choices[0].message.content);
+    return JSON.parse(response.content);
   } catch (error: any) {
     console.error("Error analyzing student skills:", error);
     throw new Error(`Failed to analyze student skills: ${error.message}`);
