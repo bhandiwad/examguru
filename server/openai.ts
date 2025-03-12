@@ -228,58 +228,62 @@ export async function evaluateAnswers(imageBase64: string, questions: any) {
       messages: [
         {
           role: "user" as const,
-          content: [
-            {
-              type: "text",
-              text: `Analyze this exam answer image and evaluate it based on these questions:
-              ${JSON.stringify(questions, null, 2)}
+          content: `Analyze these exam answers and evaluate them based on these questions:
+          ${JSON.stringify(questions, null, 2)}
 
-              Follow these evaluation rules:
-              1. For MCQ questions:
-                 - Compare student's selected option with correct answer
-                 - Award full marks for correct answers
-                 - Zero marks for incorrect answers
+          Follow these evaluation rules:
+          1. For MCQ questions:
+             - Compare student's selected option with correct answer
+             - Award full marks for correct answers
+             - Zero marks for incorrect answers
 
-              2. For theory/numerical questions:
-                 - Check solution steps visible in the answer image
-                 - Follow the provided rubric strictly
-                 - Award partial marks based on correct steps
-                 - Look for mathematical reasoning and proof
+          2. For theory/numerical questions:
+             - Check solution steps visible in the answer
+             - Follow the provided rubric strictly
+             - Award partial marks based on correct steps
+             - Look for mathematical reasoning and proof
 
-              3. For each question provide:
-                 - Detailed scoring breakdown
-                 - Specific feedback on mistakes
-                 - Conceptual understanding assessment
-                 - Improvement suggestions
-                 - Topic-specific study resources
+          3. For each question provide:
+             - Detailed scoring breakdown
+             - Specific feedback on mistakes
+             - Conceptual understanding assessment
+             - Improvement suggestions
+             - Topic-specific study resources
 
-              Provide the evaluation in JSON format with this structure:
-              {
-                "score": number (0-100),
-                "feedback": {
-                  "overall": {
-                    "summary": string,
-                    "strengths": string[],
-                    "areas_for_improvement": string[],
-                    "learning_recommendations": object[]
+          Important: Respond in JSON format with this structure:
+          {
+            "score": number (0-100),
+            "feedback": {
+              "overall": {
+                "summary": string,
+                "strengths": string[],
+                "areas_for_improvement": string[],
+                "learning_recommendations": object[]
+              },
+              "perQuestion": [
+                {
+                  "questionNumber": number,
+                  "score": number,
+                  "conceptualUnderstanding": {
+                    "level": string,
+                    "details": string
                   },
-                  "questions": array of question feedback objects,
-                  "performanceAnalytics": {...}
+                  "technicalAccuracy": {
+                    "score": number,
+                    "details": string
+                  },
+                  "keyConceptsCovered": string[],
+                  "misconceptions": string[],
+                  "improvementAreas": string[],
+                  "exemplarAnswer": string
                 }
-              }`
-            },
-            {
-              type: "image_url",
-              image_url: {
-                url: `data:image/jpeg;base64,${imageBase64}`
-              }
+              ]
             }
-          ],
-        },
+          }`
+        }
       ],
       maxTokens: 4000,
       temperature: 0.3,
-      responseFormat: { type: "json_object" },
       context: "evaluation"
     });
 
