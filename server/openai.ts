@@ -11,7 +11,7 @@ export async function generateQuestions(
   selectedTemplate?: any,
   chapters?: string[]
 ) {
-  console.log("Generating questions with params:", {
+  console.log("[OpenAI] Generating questions with params:", {
     subject,
     curriculum,
     grade,
@@ -145,7 +145,7 @@ export async function generateQuestions(
   Each question object must include: type, text, marks, choices (for MCQ), correctAnswer (for MCQ), rubric, section, chapter, topic, keyConcepts, and studyResources.`;
 
   try {
-    console.log("Sending prompt to LLM provider");
+    console.log("[OpenAI] Sending prompt to LLM provider");
     const response = await getDefaultProvider().generateCompletion({
       messages: [
         {
@@ -162,13 +162,13 @@ export async function generateQuestions(
       throw new Error("No content received from LLM provider");
     }
 
-    console.log("Received response from LLM provider");
+    console.log("[OpenAI] Received response from LLM provider");
     let parsedResponse;
     try {
       parsedResponse = JSON.parse(response.content);
-      console.log("Successfully parsed LLM response");
+      console.log("[OpenAI] Successfully parsed LLM response");
     } catch (parseError) {
-      console.error("Failed to parse LLM response:", parseError);
+      console.error("[OpenAI] Failed to parse LLM response:", parseError);
       throw new Error("Invalid JSON response from LLM provider");
     }
 
@@ -178,7 +178,7 @@ export async function generateQuestions(
     }
 
     if (!questions || !Array.isArray(questions)) {
-      console.error("Invalid response structure:", parsedResponse);
+      console.error("[OpenAI] Invalid response structure:", parsedResponse);
       throw new Error("LLM response missing questions array");
     }
 
@@ -209,7 +209,7 @@ export async function generateQuestions(
             question.image = imageResponse.url;
           }
         } catch (error) {
-          console.error("Failed to generate image for question:", error);
+          console.error("[OpenAI] Failed to generate image for question:", error);
 
         }
       }
@@ -217,13 +217,14 @@ export async function generateQuestions(
 
     return { questions };
   } catch (error: any) {
-    console.error("Error generating questions:", error);
+    console.error("[OpenAI] Error generating questions:", error.message);
     throw new Error(`Failed to generate questions: ${error.message}`);
   }
 }
 
 export async function evaluateAnswers(imageBase64: string, questions: any) {
   try {
+    console.log("[OpenAI] Sending prompt to LLM provider");
     const response = await getDefaultProvider().generateCompletion({
       messages: [
         {
@@ -301,10 +302,14 @@ export async function evaluateAnswers(imageBase64: string, questions: any) {
         throw new Error("Invalid response structure");
       }
 
-      console.log("Evaluation completed successfully");
+      console.log("[OpenAI] Evaluation completed successfully:", {
+        score: parsedResponse.score,
+        summary: parsedResponse.feedback.overall.summary
+      });
+
       return parsedResponse;
     } catch (parseError) {
-      console.error("Failed to parse evaluation response:", parseError);
+      console.error("[OpenAI] Failed to parse evaluation response:", parseError.message);
       // Return a basic valid response structure if parsing fails
       return {
         score: 0,
@@ -335,13 +340,14 @@ export async function evaluateAnswers(imageBase64: string, questions: any) {
       };
     }
   } catch (error: any) {
-    console.error("Error in evaluation:", error);
+    console.error("[OpenAI] Error in evaluation:", error.message);
     throw error;
   }
 }
 
 export async function analyzeQuestionPaperTemplate(imageBase64: string) {
   try {
+    console.log("[OpenAI] Analyzing question paper template");
     const response = await getDefaultProvider().generateCompletion({
       messages: [
         {
@@ -391,10 +397,10 @@ export async function analyzeQuestionPaperTemplate(imageBase64: string) {
     }
 
     const template = JSON.parse(response.content);
-    console.log("Extracted template structure:", template);
+    console.log("[OpenAI] Extracted template structure:", template);
     return template;
   } catch (error: any) {
-    console.error("Error analyzing question paper:", error);
+    console.error("[OpenAI] Error analyzing question paper:", error.message);
     throw new Error(`Failed to analyze question paper: ${error.message}`);
   }
 }
@@ -406,6 +412,7 @@ export async function generateTutorResponse(
   history: { role: "system" | "user" | "assistant"; content: string }[]
 ) {
   try {
+    console.log("[OpenAI] Generating tutor response");
     const systemPrompt = subject && grade
       ? `You are an expert tutor specializing in ${subject} for Grade ${grade} students.
         Your role is to:
@@ -452,12 +459,13 @@ export async function generateTutorResponse(
       throw new Error("No response generated");
     }
 
+    console.log("[OpenAI] Tutor response generated");
     return {
       role: "assistant" as const,
       content: response.content
     };
   } catch (error: any) {
-    console.error("Error generating tutor response:", error);
+    console.error("[OpenAI] Error generating tutor response:", error.message);
     throw new Error(`Failed to generate tutor response: ${error.message}`);
   }
 }
@@ -468,7 +476,7 @@ export async function adjustQuestionDifficulty(
   subject: string,
   grade: string
 ) {
-  console.log("Adjusting difficulty to:", newDifficulty);
+  console.log("[OpenAI] Adjusting difficulty to:", newDifficulty);
 
   let difficultyGuidelines = "";
   if (newDifficulty === "Hard") {
@@ -507,6 +515,7 @@ export async function adjustQuestionDifficulty(
   {"questions": [...array of adjusted questions with same structure as input...]}`;
 
   try {
+    console.log("[OpenAI] Sending prompt to adjust question difficulty");
     const response = await getDefaultProvider().generateCompletion({
       messages: [
         {
@@ -526,7 +535,7 @@ export async function adjustQuestionDifficulty(
     }
 
     const adjustedQuestions = JSON.parse(response.content);
-    console.log("Successfully adjusted questions difficulty");
+    console.log("[OpenAI] Successfully adjusted questions difficulty");
 
     if (!adjustedQuestions.questions || !Array.isArray(adjustedQuestions.questions)) {
       throw new Error("Invalid response format from OpenAI");
@@ -534,13 +543,14 @@ export async function adjustQuestionDifficulty(
 
     return adjustedQuestions.questions;
   } catch (error: any) {
-    console.error("Error adjusting question difficulty:", error);
+    console.error("[OpenAI] Error adjusting question difficulty:", error.message);
     throw new Error(`Failed to adjust question difficulty: ${error.message}`);
   }
 }
 
 export async function analyzeStudentSkills(attempts: any[]) {
   try {
+    console.log("[OpenAI] Analyzing student skills");
     const prompt = `Analyze this student's exam performance data and provide a comprehensive skills assessment. 
     Consider their progress over time and identify patterns in their learning.
 
@@ -667,9 +677,10 @@ export async function analyzeStudentSkills(attempts: any[]) {
       throw new Error("No content received from LLM provider");
     }
 
+    console.log("[OpenAI] Student skills analysis complete");
     return JSON.parse(response.content);
   } catch (error: any) {
-    console.error("Error analyzing student skills:", error);
+    console.error("[OpenAI] Error analyzing student skills:", error.message);
     throw new Error(`Failed to analyze student skills: ${error.message}`);
   }
 }

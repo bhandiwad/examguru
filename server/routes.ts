@@ -322,6 +322,13 @@ export async function registerRoutes(app: Express) {
         return res.status(400).json({ message: "Invalid exam ID or user ID" });
       }
 
+      console.log("[Exam] Processing attempt submission:", {
+        examId,
+        userId,
+        hasImage: !!req.file,
+        hasAnswers: !!req.body.answers
+      });
+
       const exam = await storage.getExam(examId);
       if (!exam) {
         return res.status(404).json({ message: "Exam not found" });
@@ -332,13 +339,13 @@ export async function registerRoutes(app: Express) {
       const hasTheoryQuestions = questions.some(q => q.type !== 'MCQ');
 
       if (hasTheoryQuestions) {
-        // For exams with theory questions, evaluate using image
+        console.log("[Exam] Evaluating theory questions from image");
         if (!req.file) {
           return res.status(400).json({ message: "Answer image required for theory questions" });
         }
         evaluation = await evaluateAnswers(req.file.buffer.toString('base64'), questions);
       } else {
-        // For MCQ-only exams, evaluate the answers directly
+        console.log("[Exam] Evaluating MCQ answers");
         if (!req.body.answers) {
           return res.status(400).json({ message: "Answers required for MCQ questions" });
         }
@@ -395,11 +402,11 @@ export async function registerRoutes(app: Express) {
         };
       }
 
-      console.log("Creating attempt with evaluation:", {
+      console.log("[Exam] Evaluation completed:", {
         examId,
         userId,
         score: evaluation.score,
-        feedbackSummary: evaluation.feedback.overall.summary
+        summary: evaluation.feedback.overall.summary
       });
 
       const attempt = await storage.createAttempt({
@@ -415,12 +422,18 @@ export async function registerRoutes(app: Express) {
       // Check and award any new achievements
       const newAchievements = await storage.checkAndAwardAchievements(userId);
 
+      console.log("[Exam] Attempt saved successfully:", {
+        attemptId: attempt.id,
+        score: attempt.score,
+        newAchievementsCount: newAchievements.length
+      });
+
       res.json({
         attempt,
         newAchievements
       });
     } catch (error: any) {
-      console.error("Error uploading attempt:", error);
+      console.error("[Exam] Error processing attempt:", error.message);
       res.status(500).json({
         message: "Failed to process attempt",
         error: error.message
