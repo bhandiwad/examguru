@@ -325,6 +325,7 @@ export async function registerRoutes(app: Express) {
       console.log("[Exam] Processing attempt submission:", {
         examId,
         userId,
+        startTime: startTime.toISOString(),
         hasImage: !!req.file,
         hasAnswers: !!req.body.answers
       });
@@ -335,7 +336,7 @@ export async function registerRoutes(app: Express) {
       }
 
       let evaluation;
-      const questions = exam.questions as any[];
+      const questions = exam.questions;
       const hasTheoryQuestions = questions.some(q => q.type !== 'MCQ');
 
       if (hasTheoryQuestions) {
@@ -365,14 +366,14 @@ export async function registerRoutes(app: Express) {
             score,
             conceptualUnderstanding: {
               level: isCorrect ? "Proficient" : "Needs Improvement",
-              details: isCorrect
-                ? "Demonstrated clear understanding of the concept"
+              details: isCorrect 
+                ? "Demonstrated clear understanding of the concept" 
                 : `Selected incorrect option. The correct answer was ${q.correctAnswer}`
             },
             technicalAccuracy: {
               score: isCorrect ? 100 : 0,
-              details: isCorrect
-                ? "Correct answer selected"
+              details: isCorrect 
+                ? "Correct answer selected" 
                 : "Incorrect answer selected"
             },
             keyConceptsCovered: q.keyConcepts || [q.topic],
@@ -406,7 +407,8 @@ export async function registerRoutes(app: Express) {
         examId,
         userId,
         score: evaluation.score,
-        summary: evaluation.feedback.overall.summary
+        summary: evaluation.feedback.overall.summary,
+        questionCount: evaluation.feedback.perQuestion.length
       });
 
       const attempt = await storage.createAttempt({
@@ -419,14 +421,13 @@ export async function registerRoutes(app: Express) {
         feedback: evaluation.feedback
       });
 
-      // Check and award any new achievements
-      const newAchievements = await storage.checkAndAwardAchievements(userId);
-
-      console.log("[Exam] Attempt saved successfully:", {
+      console.log("[Exam] Attempt saved:", {
         attemptId: attempt.id,
-        score: attempt.score,
-        newAchievementsCount: newAchievements.length
+        score: attempt.score
       });
+
+      // Check and award achievements
+      const newAchievements = await storage.checkAndAwardAchievements(userId);
 
       res.json({
         attempt,
