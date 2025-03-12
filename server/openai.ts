@@ -141,30 +141,8 @@ export async function generateQuestions(
      - Keep black and white, minimal design
      - Focus on clarity and educational value
 
-  Your response MUST be a valid JSON object with this exact structure:
-  {
-    "questions": [
-      {
-        "type": "MCQ",
-        "text": "question text",
-        "marks": 10,
-        "choices": {
-          "A": "choice text",
-          "B": "choice text",
-          "C": "choice text",
-          "D": "choice text"
-        },
-        "correctAnswer": "A|B|C|D",
-        "rubric": "evaluation criteria",
-        "section": "theory|problems",
-        "chapter": "chapter name",
-        "topic": "specific topic",
-        "keyConcepts": ["concept1", "concept2"],
-        "studyResources": ["resource1", "resource2"],
-        "imageDescription": "optional"
-      }
-    ]
-  }`;
+  Your response must be a valid JSON string with questions array containing question objects.
+  Each question object must include: type, text, marks, choices (for MCQ), correctAnswer (for MCQ), rubric, section, chapter, topic, keyConcepts, and studyResources.`;
 
   try {
     console.log("Sending prompt to LLM provider");
@@ -177,7 +155,6 @@ export async function generateQuestions(
       ],
       temperature: 0.7,
       maxTokens: 2000,
-      responseFormat: { type: "json_object" },
       context: "questionGeneration" // This will use the question generation system prompt
     });
 
@@ -233,7 +210,7 @@ export async function generateQuestions(
           }
         } catch (error) {
           console.error("Failed to generate image for question:", error);
-          
+
         }
       }
     }
