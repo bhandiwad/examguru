@@ -344,67 +344,77 @@ export async function registerRoutes(app: Express) {
         }
 
         const selectedAnswers = JSON.parse(req.body.answers);
-        const score = questions.reduce((total, q, index) => {
-          if (q.type === 'MCQ' && selectedAnswers[index] === q.correctAnswer) {
-            return total + q.marks;
-          }
-          return total;
-        }, 0);
-
         const totalMarks = questions.reduce((sum, q) => sum + q.marks, 0);
-        const percentage = Math.round((score / totalMarks) * 100);
+        let totalScore = 0;
+
+        // Create detailed feedback for MCQ questions
+        const perQuestionFeedback = questions.map((q, index) => {
+          const isCorrect = selectedAnswers[index] === q.correctAnswer;
+          const score = isCorrect ? q.marks : 0;
+          totalScore += score;
+
+          return {
+            questionNumber: index + 1,
+            score,
+            conceptualUnderstanding: {
+              level: isCorrect ? "Proficient" : "Needs Improvement",
+              details: isCorrect
+                ? "Demonstrated clear understanding of the concept"
+                : `Selected incorrect option. The correct answer was ${q.correctAnswer}`
+            },
+            technicalAccuracy: {
+              score: isCorrect ? 100 : 0,
+              details: isCorrect
+                ? "Correct answer selected"
+                : "Incorrect answer selected"
+            },
+            keyConceptsCovered: q.keyConcepts || [q.topic],
+            misconceptions: isCorrect ? [] : ["Review this concept's fundamentals"],
+            improvementAreas: isCorrect ? [] : ["Practice similar questions to strengthen understanding"],
+            exemplarAnswer: `The correct answer is ${q.correctAnswer}. ${q.rubric || ''}`
+          };
+        });
+
+        const percentage = Math.round((totalScore / totalMarks) * 100);
 
         evaluation = {
           score: percentage,
           feedback: {
             overall: {
-              summary: `You scored ${percentage}% in this MCQ exam.`,
-              strengths: percentage >= 70 ? ["Good performance in multiple choice questions"] : [],
-              areas_for_improvement: percentage < 70 ? ["Review the topics where you made mistakes"] : [],
+              summary: `You scored ${percentage}% on this MCQ exam.`,
+              strengths: perQuestionFeedback
+                .filter(q => q.score > 0)
+                .map(q => `Strong understanding of ${q.keyConceptsCovered[0]}`),
+              areas_for_improvement: perQuestionFeedback
+                .filter(q => q.score === 0)
+                .map(q => `Need to review ${q.keyConceptsCovered[0]}`),
               learning_recommendations: []
             },
-            perQuestion: questions.map((q, index) => ({
-              questionNumber: index + 1,
-              score: selectedAnswers[index] === q.correctAnswer ? q.marks : 0,
-              conceptualUnderstanding: {
-                level: selectedAnswers[index] === q.correctAnswer ? "Good" : "Needs Improvement",
-                details: selectedAnswers[index] === q.correctAnswer ?
-                  "Correctly answered" : "Incorrect answer selected"
-              },
-              technicalAccuracy: {
-                score: selectedAnswers[index] === q.correctAnswer ? 100 : 0,
-                details: selectedAnswers[index] === q.correctAnswer ?
-                  "Accurate selection" : "Wrong option selected"
-              },
-              keyConceptsCovered: [q.text],
-              misconceptions: selectedAnswers[index] !== q.correctAnswer ?
-                ["Review this concept"] : [],
-              improvementAreas: selectedAnswers[index] !== q.correctAnswer ?
-                ["Practice similar questions"] : [],
-              exemplarAnswer: `The correct answer is ${q.correctAnswer}`
-            }))
+            perQuestion: perQuestionFeedback
           }
         };
       }
 
-      console.log("Evaluation result:", evaluation); // Add logging
+      console.log("Creating attempt with evaluation:", {
+        examId,
+        userId,
+        score: evaluation.score,
+        feedbackSummary: evaluation.feedback.overall.summary
+      });
 
       const attempt = await storage.createAttempt({
         examId,
         userId,
         startTime,
         endTime: new Date(),
-        answerImageUrl: req.file ? "data:image/jpeg;base64," + req.file.buffer.toString('base64') : undefined,
+        answerImageUrl: req.file ? `data:image/jpeg;base64,${req.file.buffer.toString('base64')}` : undefined,
         score: evaluation.score,
         feedback: evaluation.feedback
       });
 
-      console.log("Created attempt:", attempt); // Add logging
-
       // Check and award any new achievements
       const newAchievements = await storage.checkAndAwardAchievements(userId);
 
-      // Return both the attempt and any new achievements
       res.json({
         attempt,
         newAchievements
@@ -625,7 +635,10 @@ export async function registerRoutes(app: Express) {
         : [];
 
       if (!attemptIds.length) {
-        return res.status(400).json({ message: "No attempt IDs provided" });
+        return res.status(400).json({
+          message: "No attempt IDs provided",
+          help: "Please select one or more exam attempts to analyze skills"
+        });
       }
 
       // Get attempts with exam data
@@ -633,11 +646,15 @@ export async function registerRoutes(app: Express) {
         attemptIds.map(id => storage.getAttemptWithExam(id))
       );
 
-      // Filter out any null results
+      // Filter out any null results and log what we found
       const validAttempts = attempts.filter(a => a !== null);
+      console.log(`Found ${validAttempts.length} valid attempts out of ${attemptIds.length} requested`);
 
       if (!validAttempts.length) {
-        return res.status(404).json({ message: "No valid attempts found" });
+        return res.status(404).json({
+          message: "No valid attempts found",
+          help: "The selected attempts may have been deleted or are not accessible"
+        });
       }
 
       const analysis = await analyzeStudentSkills(validAttempts);
@@ -646,7 +663,8 @@ export async function registerRoutes(app: Express) {
       console.error("Error analyzing student skills:", error);
       res.status(500).json({
         message: "Failed to analyze student skills",
-        error: error.message
+        error: error.message,
+        help: "Please try again with different attempts or contact support if the issue persists"
       });
     }
   });
