@@ -339,6 +339,10 @@ export async function registerRoutes(app: Express) {
         evaluation = await evaluateAnswers(req.file.buffer.toString('base64'), questions);
       } else {
         // For MCQ-only exams, evaluate the answers directly
+        if (!req.body.answers) {
+          return res.status(400).json({ message: "Answers required for MCQ questions" });
+        }
+
         const selectedAnswers = JSON.parse(req.body.answers);
         const score = questions.reduce((total, q, index) => {
           if (q.type === 'MCQ' && selectedAnswers[index] === q.correctAnswer) {
@@ -383,6 +387,8 @@ export async function registerRoutes(app: Express) {
         };
       }
 
+      console.log("Evaluation result:", evaluation); // Add logging
+
       const attempt = await storage.createAttempt({
         examId,
         userId,
@@ -392,6 +398,8 @@ export async function registerRoutes(app: Express) {
         score: evaluation.score,
         feedback: evaluation.feedback
       });
+
+      console.log("Created attempt:", attempt); // Add logging
 
       // Check and award any new achievements
       const newAchievements = await storage.checkAndAwardAchievements(userId);
