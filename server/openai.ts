@@ -227,59 +227,56 @@ export async function evaluateAnswers(imageBase64: string, questions: any) {
     const response = await getDefaultProvider().generateCompletion({
       messages: [
         {
+          role: "system" as const,
+          content: "You are an exam evaluation expert. You MUST respond with ONLY valid JSON data, no other text. Follow the schema exactly as requested."
+        },
+        {
           role: "user" as const,
-          content: `Analyze these exam answers and evaluate them based on these questions:
+          content: `Evaluate these exam answers for the following questions:
           ${JSON.stringify(questions, null, 2)}
 
-          Follow these evaluation rules:
-          1. For MCQ questions:
-             - Compare student's selected option with correct answer
-             - Award full marks for correct answers
+          Evaluation requirements:
+          1. MCQ questions:
+             - Full marks for correct answers
              - Zero marks for incorrect answers
 
-          2. For theory/numerical questions:
-             - Check solution steps visible in the answer
-             - Follow the provided rubric strictly
-             - Award partial marks based on correct steps
-             - Look for mathematical reasoning and proof
+          2. Theory questions:
+             - Follow the provided rubric
+             - Award partial marks for partial solutions
+             - Consider mathematical reasoning
 
-          3. For each question provide:
-             - Detailed scoring breakdown
-             - Specific feedback on mistakes
-             - Conceptual understanding assessment
-             - Improvement suggestions
-             - Topic-specific study resources
-
-          Important: Respond in JSON format with this structure:
+          IMPORTANT: You MUST respond with ONLY valid JSON following this EXACT structure:
           {
-            "score": number (0-100),
+            "score": 0-100,
             "feedback": {
               "overall": {
-                "summary": string,
-                "strengths": string[],
-                "areas_for_improvement": string[],
-                "learning_recommendations": object[]
+                "summary": "string",
+                "strengths": ["string"],
+                "areas_for_improvement": ["string"],
+                "learning_recommendations": []
               },
               "perQuestion": [
                 {
                   "questionNumber": number,
                   "score": number,
                   "conceptualUnderstanding": {
-                    "level": string,
-                    "details": string
+                    "level": "string",
+                    "details": "string"
                   },
                   "technicalAccuracy": {
                     "score": number,
-                    "details": string
+                    "details": "string"
                   },
-                  "keyConceptsCovered": string[],
-                  "misconceptions": string[],
-                  "improvementAreas": string[],
-                  "exemplarAnswer": string
+                  "keyConceptsCovered": ["string"],
+                  "misconceptions": ["string"],
+                  "improvementAreas": ["string"],
+                  "exemplarAnswer": "string"
                 }
               ]
             }
-          }`
+          }
+
+          DO NOT include any explanatory text - respond with ONLY the JSON object.`
         }
       ],
       maxTokens: 4000,
@@ -292,12 +289,50 @@ export async function evaluateAnswers(imageBase64: string, questions: any) {
     }
 
     try {
-      const parsedResponse = JSON.parse(response.content);
-      console.log("Evaluation completed successfully:", parsedResponse);
+      // Remove any non-JSON content before parsing
+      const jsonStart = response.content.indexOf('{');
+      const jsonEnd = response.content.lastIndexOf('}') + 1;
+      const jsonContent = response.content.slice(jsonStart, jsonEnd);
+
+      const parsedResponse = JSON.parse(jsonContent);
+
+      // Validate response structure
+      if (!parsedResponse.score || !parsedResponse.feedback || !parsedResponse.feedback.overall || !parsedResponse.feedback.perQuestion) {
+        throw new Error("Invalid response structure");
+      }
+
+      console.log("Evaluation completed successfully");
       return parsedResponse;
     } catch (parseError) {
       console.error("Failed to parse evaluation response:", parseError);
-      throw new Error("Invalid evaluation response format");
+      // Return a basic valid response structure if parsing fails
+      return {
+        score: 0,
+        feedback: {
+          overall: {
+            summary: "Error processing evaluation",
+            strengths: [],
+            areas_for_improvement: ["Unable to process evaluation at this time"],
+            learning_recommendations: []
+          },
+          perQuestion: questions.map((q: any, index: number) => ({
+            questionNumber: index + 1,
+            score: 0,
+            conceptualUnderstanding: {
+              level: "Not Evaluated",
+              details: "Evaluation failed"
+            },
+            technicalAccuracy: {
+              score: 0,
+              details: "Evaluation failed"
+            },
+            keyConceptsCovered: [q.topic || "Unknown"],
+            misconceptions: ["Evaluation unavailable"],
+            improvementAreas: ["Please try submitting again"],
+            exemplarAnswer: "Not available"
+          }))
+        }
+      };
     }
   } catch (error: any) {
     console.error("Error in evaluation:", error);
