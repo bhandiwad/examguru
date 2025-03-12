@@ -35,12 +35,17 @@ app.use((req, res, next) => {
 
 (async () => {
   try {
+    const startTime = Date.now();
+    console.log("Starting server initialization...");
+
     // Initialize LLM system before setting up routes
     console.log("Initializing LLM system...");
     await initializeLLM();
-    console.log("LLM system initialized successfully");
+    console.log(`LLM system initialized successfully (${Date.now() - startTime}ms)`);
 
+    console.log("Registering routes...");
     const server = await registerRoutes(app);
+    console.log(`Routes registered (${Date.now() - startTime}ms)`);
 
     app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
       console.error("Application error:", err);
@@ -50,7 +55,9 @@ app.use((req, res, next) => {
     });
 
     if (app.get("env") === "development") {
+      console.log("Setting up Vite development server...");
       await setupVite(app, server);
+      console.log(`Vite setup complete (${Date.now() - startTime}ms)`);
     } else {
       serveStatic(app);
     }
@@ -62,17 +69,20 @@ app.use((req, res, next) => {
         reject(new Error("Server startup timed out after 30 seconds"));
       }, 30000);
 
+      console.log(`Attempting to bind to port ${port}...`);
       server.listen({
         port,
         host: "0.0.0.0",
       })
       .once('error', (err) => {
         clearTimeout(startTimeout);
+        console.error(`Failed to bind to port ${port}:`, err);
         reject(err);
       })
       .once('listening', () => {
         clearTimeout(startTimeout);
-        console.log(`Server started successfully on port ${port}`);
+        const totalTime = Date.now() - startTime;
+        console.log(`Server started successfully on port ${port} (total time: ${totalTime}ms)`);
         log(`serving on port ${port}`);
         resolve();
       });
